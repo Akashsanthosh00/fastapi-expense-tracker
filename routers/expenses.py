@@ -7,6 +7,7 @@ from typing import List
 
 router = APIRouter()
 
+#get all the expenses from database
 @router.get("/expenses", response_model=List[Expense])
 def get_expenses(
     category: List[str] | None = Query(default=None),
@@ -33,6 +34,8 @@ def get_expenses(
 
     return result
 
+
+#get expense with given id
 @router.get("/expenses/{expense_id}", response_model=Expense)
 def get_expenses_by_id(expense_id: int, db: Session=Depends(get_db)):
     query = db.query(ExpenseModel)
@@ -43,6 +46,8 @@ def get_expenses_by_id(expense_id: int, db: Session=Depends(get_db)):
 
     raise HTTPException(status_code=404, detail="Expense not found")
 
+
+# add the expense to the database
 @router.post("/expenses", response_model=Expense, status_code=201)
 def add_expense(expense: ExpenseCreate, db: Session = Depends(get_db)):
 
@@ -65,6 +70,8 @@ def add_expense(expense: ExpenseCreate, db: Session = Depends(get_db)):
 
     return new_expense
 
+
+# delete the expense from database
 @router.delete("/expenses/{expense_id}")
 def delete_by_id(expense_id: int, db: Session = Depends(get_db)):
     query = db.query(ExpenseModel)
@@ -78,6 +85,8 @@ def delete_by_id(expense_id: int, db: Session = Depends(get_db)):
 
     raise HTTPException(status_code=404, detail="Expense not found")
 
+
+# update the existing expense
 @router.put("/expenses/{expense_id}", response_model=Expense)
 def update_expense(expense_id: int, 
                    expense: ExpenseCreate, 
@@ -99,6 +108,8 @@ def update_expense(expense_id: int,
 
     raise HTTPException(status_code=404, detail="Id not found")
 
+
+#partially update the exising expense
 @router.patch("/expenses/{expense_id}", response_model=Expense)
 def update_partial_expense(expense_id: int, 
                            expense: ExpenseUpdate,

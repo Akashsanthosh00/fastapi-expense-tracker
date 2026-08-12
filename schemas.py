@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
+from typing import List
 import datetime
 
 ## The given are the validation functions to validate the input value
@@ -99,6 +100,12 @@ class Expense(BaseModel):
     amount: float
     category: Category
     date: datetime.date
+
+class ExpensePagination(BaseModel):
+    items: List[Expense]
+    page: int
+    limit: int
+    total: int
 
 class ExpenseDB(Expense):
     approval_code: str

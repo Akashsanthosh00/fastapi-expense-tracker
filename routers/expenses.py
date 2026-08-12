@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
-from schemas import ExpenseCreate, Expense, ExpenseUpdate
+from schemas import ExpenseCreate, Expense, ExpenseUpdate, ExpensePagination
 from database import  get_db
 from database_models import Expense as ExpenseModel
 from sqlalchemy.orm import Session
@@ -8,13 +8,15 @@ from typing import List
 router = APIRouter()
 
 #get all the expenses from database
-@router.get("/expenses", response_model=List[Expense])
+@router.get("/expenses", response_model=ExpensePagination)
 def get_expenses(
     category: List[str] | None = Query(default=None),
     date : List[str] | None = Query(default=None),
     title : List[str] | None = Query(default=None),
     amount: List[float] | None = Query(default=None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10 ,ge=1)
 ):
     query = db.query(ExpenseModel)
 
@@ -30,9 +32,18 @@ def get_expenses(
     if amount:
         query = query.filter(ExpenseModel.amount.in_(amount))
 
-    result = query.all()
+    total = query.count()
 
-    return result
+    offset = (page-1) * limit
+
+    result = query.offset(offset).limit(limit).all()
+
+    return {
+        "items": result,
+        "page": page,
+        "limit": limit,
+        "total": total
+    }
 
 
 #get expense with given id

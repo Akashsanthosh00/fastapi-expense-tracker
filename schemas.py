@@ -110,3 +110,12 @@ class ExpensePagination(BaseModel):
 class ExpenseDB(Expense):
     approval_code: str
     password: str
+
+class SortField(str, Enum):
+    id = "id"
+    amount = "amount"
+    date = "date"
+
+class SortOrder(str, Enum):
+    asc = "asc"
+    desc = "desc"

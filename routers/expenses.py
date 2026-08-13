@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
-from schemas import ExpenseCreate, Expense, ExpenseUpdate, ExpensePagination
+from schemas import (
+    ExpenseCreate, Expense, ExpenseUpdate, ExpensePagination, SortField, SortOrder
+    )
 from database import  get_db
 from database_models import Expense as ExpenseModel
 from sqlalchemy.orm import Session
@@ -7,19 +9,52 @@ from typing import List
 
 router = APIRouter()
 
-#get all the expenses from database
+
+# ============================================================
+# GET ALL EXPENSES
+# Supports:
+# 1. Filtering
+# 2. Sorting
+# 3. Pagination
+# ============================================================
+
 @router.get("/expenses", response_model=ExpensePagination)
 def get_expenses(
+    # -------------------------
+    # Filtering parameters
+    # -------------------------
     category: List[str] | None = Query(default=None),
     date : List[str] | None = Query(default=None),
     title : List[str] | None = Query(default=None),
     amount: List[float] | None = Query(default=None),
-    db: Session = Depends(get_db),
+
+    # -------------------------
+    # Pagination parameters
+    # -------------------------
     page: int = Query(default=1, ge=1),
-    limit: int = Query(default=10 ,ge=1)
+    limit: int = Query(default=10 ,ge=1),
+
+    # -------------------------
+    # Sorting parameters
+    # -------------------------
+    # If the user doesn't provide sort_by,
+    # expenses will be sorted by ID.
+    sort_by: SortField = SortField.id,
+
+    # If the user doesn't provide order,
+    # ascending order will be used.
+    order: SortOrder = SortOrder.asc,
+
+    # Database session
+    db: Session = Depends(get_db)
 ):
+    
+    # Start a query for the Expense table
     query = db.query(ExpenseModel)
 
+    # ========================================================
+    # 1. FILTERING
+    # ========================================================
     if category:
         query = query.filter(ExpenseModel.category.in_(category))
 
@@ -32,12 +67,48 @@ def get_expenses(
     if amount:
         query = query.filter(ExpenseModel.amount.in_(amount))
 
+    # ========================================================
+    # 2. SORTING
+    # ========================================================
+
+    # Convert the user's sort_by choice
+    # into the corresponding SQLAlchemy column.
+    if sort_by == SortField.id:
+        sort_column = ExpenseModel.id
+    elif sort_by == SortField.amount:
+        sort_column = ExpenseModel.amount
+    elif sort_by == SortField.date:
+        sort_column = ExpenseModel.date
+
+    if order == SortOrder.asc:
+        order_by = sort_column.asc()
+    else:
+        order_by = sort_column.desc()
+
+    # Apply the sorting instruction to the query
+    query = query.order_by(order_by)
+
+    # ========================================================
+    # 3. COUNT TOTAL RESULTS
+    # ========================================================
+
+    # Count how many expenses match the filters.
+    # This is the total number of matching records,
+    # not the number returned on the current page.
     total = query.count()
 
+    # ========================================================
+    # 4. PAGINATION
+    # ========================================================
     offset = (page-1) * limit
 
+    # Skip the required number of records
+    # and retrieve only 'limit' records.
     result = query.offset(offset).limit(limit).all()
 
+    # ========================================================
+    # 5. RESPONSE
+    # ========================================================
     return {
         "items": result,
         "page": page,
@@ -45,10 +116,12 @@ def get_expenses(
         "total": total
     }
 
-
-#get expense with given id
+# ============================================================
+# GET EXPENSE BY ID
+# ============================================================
 @router.get("/expenses/{expense_id}", response_model=Expense)
 def get_expenses_by_id(expense_id: int, db: Session=Depends(get_db)):
+    # Create a query for the Expense table
     query = db.query(ExpenseModel)
 
     result = query.filter(ExpenseModel.id == expense_id).first()
@@ -57,34 +130,48 @@ def get_expenses_by_id(expense_id: int, db: Session=Depends(get_db)):
 
     raise HTTPException(status_code=404, detail="Expense not found")
 
-
-# add the expense to the database
-@router.post("/expenses", response_model=Expense, status_code=201)
+# ============================================================
+# POST / ADD EXPENSE
+# ===========================================================
+@router.post("/expenses",response_model=Expense,status_code=201)
 def add_expense(expense: ExpenseCreate, db: Session = Depends(get_db)):
 
+    # Create a new ExpenseModel object
+    # using the data received from the request.
     new_expense = ExpenseModel(
-                          title = expense.title,
-                          amount = expense.amount,
-                          category = expense.category,
-                          date = expense.date,
-                          password = expense.password
-                        )
+        title=expense.title,
+        amount=expense.amount,
+        category=expense.category,
+        date=expense.date,
+        password=expense.password
+    )
 
+    # Add the new expense to the database session
     db.add(new_expense)
 
+    # Flush sends the INSERT to the database
+    # so that the auto-generated ID becomes available.
     db.flush()
 
+    # Create the approval code using the generated ID
     approval_code = "EXP" + str(new_expense.id)
+
+    # Store the approval code
     new_expense.approval_code = approval_code
 
+    # Permanently save the changes
     db.commit()
 
+    # Return the newly created expense
     return new_expense
 
 
-# delete the expense from database
+# ============================================================
+# DELETE EXPENSE BY ID
+# ============================================================
 @router.delete("/expenses/{expense_id}")
 def delete_by_id(expense_id: int, db: Session = Depends(get_db)):
+    # Create a query for the Expense table
     query = db.query(ExpenseModel)
 
     result = query.filter(ExpenseModel.id == expense_id).first()
@@ -97,19 +184,24 @@ def delete_by_id(expense_id: int, db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Expense not found")
 
 
-# update the existing expense
+# ============================================================
+# PUT / COMPLETE UPDATE
+# ============================================================
 @router.put("/expenses/{expense_id}", response_model=Expense)
 def update_expense(expense_id: int, 
                    expense: ExpenseCreate, 
                    db: Session = Depends(get_db)
                    ):
+    # Create a query for the Expense table
     query = db.query(ExpenseModel)
 
     result = query.filter(ExpenseModel.id == expense_id).first()
 
     if result:
+        # Convert the Pydantic model into a dictionary
         updated_data = expense.model_dump()
 
+        # Update every field received
         for key, value in updated_data.items():
             setattr(result, key, value)
 
@@ -119,15 +211,22 @@ def update_expense(expense_id: int,
 
     raise HTTPException(status_code=404, detail="Id not found")
 
-
-#partially update the exising expense
+# ============================================================
+# PATCH / PARTIAL UPDATE
+# ============================================================
 @router.patch("/expenses/{expense_id}", response_model=Expense)
 def update_partial_expense(expense_id: int, 
                            expense: ExpenseUpdate,
                            db: Session = Depends(get_db)):
+    
+    # Create a query for the Expense table
     query = db.query(ExpenseModel)
+
     result = query.filter(ExpenseModel.id == expense_id).first()
+
     if result:
+        # Convert only the fields actually provided
+        # by the user into a dictionary.
         updated_data = expense.model_dump(exclude_unset=True)
 
         for key, value in updated_data.items():

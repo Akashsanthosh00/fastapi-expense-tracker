@@ -47,14 +47,6 @@ class ExpenseUpdate(BaseModel):
     amount: float | None = Field(default=None, gt=0)
     category: Category | None = None
     date: datetime.date | None = None
-    password: str | None = Field(default= None, min_length=4, max_length=12)
-
-    @field_validator("password")
-    @classmethod
-    def validate_p(cls, value):
-        if value is None:
-            return value
-        return password_validation(value)
 
     @field_validator("title")
     @classmethod
@@ -77,12 +69,6 @@ class ExpenseCreate(BaseModel):
     amount: float = Field(gt=0)
     category: Category
     date: datetime.date
-    password: str = Field(min_length=4, max_length=12)
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, value):
-        return password_validation(value)
 
     @field_validator("title")
     @classmethod
@@ -107,10 +93,6 @@ class ExpensePagination(BaseModel):
     limit: int
     total: int
 
-class ExpenseDB(Expense):
-    approval_code: str
-    password: str
-
 class SortField(str, Enum):
     id = "id"
     amount = "amount"
@@ -119,3 +101,12 @@ class SortField(str, Enum):
 class SortOrder(str, Enum):
     asc = "asc"
     desc = "desc"
+
+class UserCreate(BaseModel):
+    username: str = Field(min_length=5)
+    password: str = Field(min_length=6, max_length=16)
+
+    @field_validator("password")
+    @classmethod
+    def password_validate(cls, password):
+        return password_validation(password)

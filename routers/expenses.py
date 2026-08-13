@@ -2,13 +2,12 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from schemas import (
     ExpenseCreate, Expense, ExpenseUpdate, ExpensePagination, SortField, SortOrder
     )
-from database import  get_db
-from database_models import Expense as ExpenseModel
+from database import get_db
+from expense_models import Expense as ExpenseModel
 from sqlalchemy.orm import Session
 from typing import List
 
 router = APIRouter()
-
 
 # ============================================================
 # GET ALL EXPENSES
@@ -143,28 +142,18 @@ def add_expense(expense: ExpenseCreate, db: Session = Depends(get_db)):
         amount=expense.amount,
         category=expense.category,
         date=expense.date,
-        password=expense.password
     )
 
     # Add the new expense to the database session
     db.add(new_expense)
 
-    # Flush sends the INSERT to the database
-    # so that the auto-generated ID becomes available.
-    db.flush()
-
-    # Create the approval code using the generated ID
-    approval_code = "EXP" + str(new_expense.id)
-
-    # Store the approval code
-    new_expense.approval_code = approval_code
-
     # Permanently save the changes
     db.commit()
 
+    db.refresh(new_expense)
+
     # Return the newly created expense
     return new_expense
-
 
 # ============================================================
 # DELETE EXPENSE BY ID

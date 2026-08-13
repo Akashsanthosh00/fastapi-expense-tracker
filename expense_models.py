@@ -9,5 +9,3 @@ class Expense(Base):
     amount = Column(Float, nullable=False)
     category = Column(String, nullable=False)
     date = Column(Date, nullable=False)
-    approval_code = Column(String, unique=True)
-    password = Column(String, nullable=False)

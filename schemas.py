@@ -110,3 +110,7 @@ class UserCreate(BaseModel):
     @classmethod
     def password_validate(cls, password):
         return password_validation(password)
+
+class UserLogin(BaseModel):
+    username: str
+    password: str

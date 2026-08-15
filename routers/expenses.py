@@ -5,6 +5,7 @@ from schemas import (
 from database import get_db
 from expense_models import Expense as ExpenseModel
 from sqlalchemy.orm import Session
+from security import verify_token
 from typing import List
 
 router = APIRouter()
@@ -19,6 +20,9 @@ router = APIRouter()
 
 @router.get("/expenses", response_model=ExpensePagination)
 def get_expenses(
+    #JWT verification
+    current_user = Depends(verify_token),
+
     # -------------------------
     # Filtering parameters
     # -------------------------
@@ -47,9 +51,12 @@ def get_expenses(
     # Database session
     db: Session = Depends(get_db)
 ):
+    user_id = current_user["sub"]
     
     # Start a query for the Expense table
-    query = db.query(ExpenseModel)
+    query = db.query(ExpenseModel).filter(
+        ExpenseModel.user_id == user_id
+    )
 
     # ========================================================
     # 1. FILTERING

@@ -171,11 +171,18 @@ def add_expense(expense: ExpenseCreate,
 # DELETE EXPENSE BY ID
 # ============================================================
 @router.delete("/expenses/{expense_id}")
-def delete_by_id(expense_id: int, db: Session = Depends(get_db)):
-    # Create a query for the Expense table
-    query = db.query(ExpenseModel)
+def delete_by_id(expense_id: int,
+                 current_user: dict = Depends(verify_token),
+                 db: Session = Depends(get_db)):
+    
+    # Get the userid
+    user = int(current_user["sub"])
 
-    result = query.filter(ExpenseModel.id == expense_id).first()
+    # Find the specific expense belonging to the logged-in user
+    result = db.query(ExpenseModel).filter(
+            ExpenseModel.user_id == user,
+            ExpenseModel.id == expense_id
+        ).first()
 
     if result:
         db.delete(result)

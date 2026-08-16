@@ -140,7 +140,11 @@ def get_expenses_by_id(expense_id: int, db: Session=Depends(get_db)):
 # POST / ADD EXPENSE
 # ===========================================================
 @router.post("/expenses",response_model=Expense,status_code=201)
-def add_expense(expense: ExpenseCreate, user_id: int, db: Session = Depends(get_db)):
+def add_expense(expense: ExpenseCreate, 
+                current_user: dict = Depends(verify_token),
+                db: Session = Depends(get_db)):
+
+    user_id = int(current_user["sub"])
 
     # Create a new ExpenseModel object
     # using the data received from the request.

@@ -27,8 +27,10 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login_user(user: OAuth2PasswordRequestForm = Depends(), 
                db: Session = Depends(get_db)):
+    
     existing_user = db.query(UserModel).filter(
         UserModel.username == user.username).first()
+    
     if existing_user is None:
         raise HTTPException(status_code=401, detail="Invalid username or password")
     

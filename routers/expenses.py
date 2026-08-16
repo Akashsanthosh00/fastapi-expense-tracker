@@ -202,9 +202,10 @@ def update_expense(expense_id: int,
                    db: Session = Depends(get_db)
                    ):
     
-    # Get the userid
+    # Get the user
     user = int(current_user["sub"])
 
+    # Find the expense with the given ID that belongs to the logged-in user
     result = db.query(ExpenseModel).filter(
         ExpenseModel.user_id == user,
         ExpenseModel.id == expense_id
@@ -222,7 +223,7 @@ def update_expense(expense_id: int,
 
         return result
 
-    raise HTTPException(status_code=404, detail="Id not found")
+    raise HTTPException(status_code=404, detail="Expense not found")
 
 # ============================================================
 # PATCH / PARTIAL UPDATE
@@ -248,4 +249,4 @@ def update_partial_expense(expense_id: int,
         db.commit()
         return result
 
-    raise HTTPException(status_code=404, detail="Expense not found!")
+    raise HTTPException(status_code=404, detail="Id not found!")

@@ -123,20 +123,6 @@ def get_expenses(
     }
 
 # ============================================================
-# GET EXPENSE BY ID
-# ============================================================
-@router.get("/expenses/{expense_id}", response_model=Expense)
-def get_expenses_by_id(expense_id: int, db: Session=Depends(get_db)):
-    # Create a query for the Expense table
-    query = db.query(ExpenseModel)
-
-    result = query.filter(ExpenseModel.id == expense_id).first()
-    if result:
-        return result
-
-    raise HTTPException(status_code=404, detail="Expense not found")
-
-# ============================================================
 # POST / ADD EXPENSE
 # ===========================================================
 @router.post("/expenses",response_model=Expense,status_code=201)
@@ -170,7 +156,7 @@ def add_expense(expense: ExpenseCreate,
 # ============================================================
 # DELETE EXPENSE BY ID
 # ============================================================
-@router.delete("/expenses/{expense_id}")
+@router.delete("/expenses")
 def delete_by_id(expense_id: int,
                  current_user: dict = Depends(verify_token),
                  db: Session = Depends(get_db)):
@@ -195,7 +181,7 @@ def delete_by_id(expense_id: int,
 # ============================================================
 # PUT / COMPLETE UPDATE
 # ============================================================
-@router.put("/expenses/{expense_id}", response_model=Expense)
+@router.put("/expenses", response_model=Expense)
 def update_expense(expense_id: int, 
                    expense: ExpenseCreate,
                    current_user: dict = Depends(verify_token),

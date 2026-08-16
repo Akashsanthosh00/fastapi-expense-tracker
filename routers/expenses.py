@@ -197,13 +197,18 @@ def delete_by_id(expense_id: int,
 # ============================================================
 @router.put("/expenses/{expense_id}", response_model=Expense)
 def update_expense(expense_id: int, 
-                   expense: ExpenseCreate, 
+                   expense: ExpenseCreate,
+                   current_user: dict = Depends(verify_token),
                    db: Session = Depends(get_db)
                    ):
-    # Create a query for the Expense table
-    query = db.query(ExpenseModel)
+    
+    # Get the userid
+    user = int(current_user["sub"])
 
-    result = query.filter(ExpenseModel.id == expense_id).first()
+    result = db.query(ExpenseModel).filter(
+        ExpenseModel.user_id == user,
+        ExpenseModel.id == expense_id
+        ).first()
 
     if result:
         # Convert the Pydantic model into a dictionary
@@ -243,4 +248,4 @@ def update_partial_expense(expense_id: int,
         db.commit()
         return result
 
-    raise HTTPException(status_code=404, detail="Id not found!")
+    raise HTTPException(status_code=404, detail="Expense not found!")

@@ -51,7 +51,7 @@ def get_expenses(
     # Database session
     db: Session = Depends(get_db)
 ):
-    user_id = current_user["sub"]
+    user_id = int(current_user["sub"])
     
     # Start a query for the Expense table
     query = db.query(ExpenseModel).filter(
@@ -214,15 +214,19 @@ def update_expense(expense_id: int,
 # ============================================================
 # PATCH / PARTIAL UPDATE
 # ============================================================
-@router.patch("/expenses/{expense_id}", response_model=Expense)
+@router.patch("/expenses", response_model=Expense)
 def update_partial_expense(expense_id: int, 
                            expense: ExpenseUpdate,
+                           current_user: dict = Depends(verify_token),
                            db: Session = Depends(get_db)):
-    
-    # Create a query for the Expense table
-    query = db.query(ExpenseModel)
 
-    result = query.filter(ExpenseModel.id == expense_id).first()
+    # Get the userid
+    user = int(current_user["sub"])
+
+    # Find the specific expense with the given ID that belongs to the logged-in user
+    result = db.query(ExpenseModel).filter(
+        ExpenseModel.user_id == user,
+        ExpenseModel.id == expense_id).first()
 
     if result:
         # Convert only the fields actually provided
@@ -235,4 +239,4 @@ def update_partial_expense(expense_id: int,
         db.commit()
         return result
 
-    raise HTTPException(status_code=404, detail="Id not found!")
+    raise HTTPException(status_code=404, detail="Expense not found!")

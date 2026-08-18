@@ -478,3 +478,314 @@ def test_delete_expense_without_token():
     )
 
     assert response.status_code == 401
+
+# authorization/user isolation
+def test_user_cannot_delete_another_users_expense():
+
+    db = TestingSessionLocal()
+
+    user1 = User(
+        username="expense_owner",
+        password=hash_password("Test@123")
+    )
+
+    user2 = User(
+        username="expense_other_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add_all([user1, user2])
+    db.commit()
+
+    # Login as User 1
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_owner",
+            "password": "Test@123"
+        }
+    )
+
+    token1 = login_response.json()["access_token"]
+
+    headers1 = {
+        "Authorization": f"Bearer {token1}"
+    }
+
+    # User 1 creates an expense
+    expense_response = client.post(
+        "/expenses",
+        json={
+            "title": "User 1 Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers1
+    )
+
+    assert expense_response.status_code == 201
+
+    expense_id = expense_response.json()["id"]
+
+    # Login as User 2
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_other_user",
+            "password": "Test@123"
+        }
+    )
+
+    token2 = login_response.json()["access_token"]
+
+    headers2 = {
+        "Authorization": f"Bearer {token2}"
+    }
+
+    # User 2 tries to delete User 1's expense
+    delete_response = client.delete(
+        f"/expenses?expense_id={expense_id}",
+        headers=headers2
+    )
+
+    assert delete_response.status_code == 404
+
+    data = delete_response.json()
+
+    assert data["detail"] == "Expense not found"
+
+def test_user_cannot_update_another_users_expense():
+
+    db = TestingSessionLocal()
+
+    user1 = User(
+        username="expense_put_owner",
+        password=hash_password("Test@123")
+    )
+
+    user2 = User(
+        username="expense_put_other_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add_all([user1, user2])
+    db.commit()
+
+    # Login as User 1
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_put_owner",
+            "password": "Test@123"
+        }
+    )
+
+    token1 = login_response.json()["access_token"]
+
+    headers1 = {
+        "Authorization": f"Bearer {token1}"
+    }
+
+    # User 1 creates an expense
+    expense_response = client.post(
+        "/expenses",
+        json={
+            "title": "User 1 Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers1
+    )
+
+    assert expense_response.status_code == 201
+
+    expense_id = expense_response.json()["id"]
+
+    # Login as User 2
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_put_other_user",
+            "password": "Test@123"
+        }
+    )
+
+    token2 = login_response.json()["access_token"]
+
+    headers2 = {
+        "Authorization": f"Bearer {token2}"
+    }
+
+    # User 2 tries to update User 1's expense
+    update_response = client.put(
+        f"/expenses?expense_id={expense_id}",
+        json={
+            "title": "Hacked Expense",
+            "amount": 9999.0,
+            "category": "Shopping",
+            "date": "2026-08-18"
+        },
+        headers=headers2
+    )
+
+    assert update_response.status_code == 404
+
+    data = update_response.json()
+
+    assert data["detail"] == "Expense not found"
+
+
+def test_user_cannot_patch_another_users_expense():
+
+    db = TestingSessionLocal()
+
+    user1 = User(
+        username="expense_patch_owner",
+        password=hash_password("Test@123")
+    )
+
+    user2 = User(
+        username="expense_patch_other_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add_all([user1, user2])
+    db.commit()
+
+    # Login as User 1
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_patch_owner",
+            "password": "Test@123"
+        }
+    )
+
+    token1 = login_response.json()["access_token"]
+
+    headers1 = {
+        "Authorization": f"Bearer {token1}"
+    }
+
+    # User 1 creates an expense
+    expense_response = client.post(
+        "/expenses",
+        json={
+            "title": "User 1 Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers1
+    )
+
+    assert expense_response.status_code == 201
+
+    expense_id = expense_response.json()["id"]
+
+    # Login as User 2
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_patch_other_user",
+            "password": "Test@123"
+        }
+    )
+
+    token2 = login_response.json()["access_token"]
+
+    headers2 = {
+        "Authorization": f"Bearer {token2}"
+    }
+
+    # User 2 tries to modify User 1's expense
+    patch_response = client.patch(
+        f"/expenses?expense_id={expense_id}",
+        json={
+            "amount": 9999.0
+        },
+        headers=headers2
+    )
+
+    assert patch_response.status_code == 404
+
+    data = patch_response.json()
+
+    assert data["detail"] == "Expense not found!"
+
+
+def test_user_cannot_see_another_users_expenses():
+
+    db = TestingSessionLocal()
+
+    user1 = User(
+        username="expense_get_owner",
+        password=hash_password("Test@123")
+    )
+
+    user2 = User(
+        username="expense_get_other_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add_all([user1, user2])
+    db.commit()
+
+    # Login as User 1
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_get_owner",
+            "password": "Test@123"
+        }
+    )
+
+    token1 = login_response.json()["access_token"]
+
+    headers1 = {
+        "Authorization": f"Bearer {token1}"
+    }
+
+    # User 1 creates an expense
+    expense_response = client.post(
+        "/expenses",
+        json={
+            "title": "User 1 Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers1
+    )
+
+    assert expense_response.status_code == 201
+
+    # Login as User 2
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "expense_get_other_user",
+            "password": "Test@123"
+        }
+    )
+
+    token2 = login_response.json()["access_token"]
+
+    headers2 = {
+        "Authorization": f"Bearer {token2}"
+    }
+
+    # User 2 gets their expenses
+    get_response = client.get(
+        "/expenses",
+        headers=headers2
+    )
+
+    assert get_response.status_code == 200
+
+    data = get_response.json()
+
+    assert data["total"] == 0
+    assert len(data["items"]) == 0

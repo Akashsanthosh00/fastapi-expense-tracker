@@ -35,7 +35,7 @@ def login_user(user: OAuth2PasswordRequestForm = Depends(),
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
     if not verify_password(user.password, existing_user.password):
-        raise HTTPException(status_code=401, detail="Invalid username or passowrd") 
+        raise HTTPException(status_code=401, detail="Invalid username or password") 
     access_token = create_access_token(
         existing_user.id,
         existing_user.username

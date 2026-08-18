@@ -789,3 +789,100 @@ def test_user_cannot_see_another_users_expenses():
 
     assert data["total"] == 0
     assert len(data["items"]) == 0
+
+# valid login test
+def test_login_success():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="login_success_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    response = client.post(
+        "/login",
+        data={
+            "username": "login_success_user",
+            "password": "Test@123"
+        }
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    assert data["access_token"] != ""
+
+# wrong password
+def test_login_wrong_password():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="login_wrong_password_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    response = client.post(
+        "/login",
+        data={
+            "username": "login_wrong_password_user",
+            "password": "Wrong@123"
+        }
+    )
+
+    assert response.status_code == 401
+
+    data = response.json()
+
+    assert data["detail"] == "Invalid username or password"
+
+# non-existant username
+def test_login_nonexistent_user():
+
+    response = client.post(
+        "/login",
+        data={
+            "username": "user_does_not_exist",
+            "password": "Test@123"
+        }
+    )
+
+    assert response.status_code == 401
+
+    data = response.json()
+
+    assert data["detail"] == "Invalid username or password"
+
+# missing login data
+def test_login_missing_password():
+
+    response = client.post(
+        "/login",
+        data={
+            "username": "some_user"
+        }
+    )
+
+    assert response.status_code == 422
+
+# missing username
+def test_login_missing_username():
+
+    response = client.post(
+        "/login",
+        data={
+            "password": "Test@123"
+        }
+    )
+
+    assert response.status_code == 422

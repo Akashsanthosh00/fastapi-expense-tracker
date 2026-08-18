@@ -417,3 +417,64 @@ def test_patch_nonexistent_expense():
     data = patch_response.json()
 
     assert data["detail"] == "Expense not found!"
+
+# GET expenses without a token
+def test_get_expenses_without_token():
+
+    response = client.get("/expenses")
+
+    assert response.status_code == 401
+
+
+# POST /expenses without a token.
+def test_create_expense_without_token():
+
+    response = client.post(
+        "/expenses",
+        json={
+            "title": "Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        }
+    )
+
+    assert response.status_code == 401
+
+
+# PUT without a token.
+def test_update_expense_without_token():
+
+    response = client.put(
+        "/expenses?expense_id=1",
+        json={
+            "title": "Dinner",
+            "amount": 500.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        }
+    )
+
+    assert response.status_code == 401
+
+
+# Now PATCH without a token.
+def test_patch_expense_without_token():
+
+    response = client.patch(
+        "/expenses?expense_id=1",
+        json={
+            "amount": 500.0
+        }
+    )
+
+    assert response.status_code == 401
+
+# Delete withouta token
+def test_delete_expense_without_token():
+
+    response = client.delete(
+        "/expenses?expense_id=1"
+    )
+
+    assert response.status_code == 401

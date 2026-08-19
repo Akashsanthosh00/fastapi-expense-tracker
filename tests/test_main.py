@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from expense_models import Expense as ExpenseModel
 from datetime import datetime, timedelta, timezone, date
 from jose import jwt
+import pytest
 
 client = TestClient(app)
 
@@ -1683,3 +1684,173 @@ def test_get_expenses_sorting():
     assert result["items"][0]["amount"] == 100.0
     assert result["items"][1]["amount"] == 300.0
     assert result["items"][2]["amount"] == 500.0
+
+# Duplicate usernames
+def test_duplicate_username():
+
+    db = TestingSessionLocal()
+
+    user1 = User(
+        username="duplicate_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user1)
+    db.commit()
+
+    user2 = User(
+        username="duplicate_user",
+        password=hash_password("Test@456")
+    )
+
+    db.add(user2)
+
+    with pytest.raises(Exception):
+        db.commit()
+
+    db.rollback()
+
+#Very large amount
+def test_create_expense_very_large_amount():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="large_amount_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "large_amount_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+    "/expenses",
+    json={
+        "title": "Very Expensive Purchase",
+        "amount": 999999999.99,
+        "category": "Shopping",
+        "date": "2026-08-19"
+    },
+    headers=headers
+    )
+
+    assert response.status_code == 201
+    assert response.json()["amount"] == 999999999.99
+
+# boundary values
+def test_create_expense_boundary_amount():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="boundary_amount_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "boundary_amount_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={
+            "title": "Free Item",
+            "amount": 0.0,
+            "category": "Food",
+            "date": "2026-08-19"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+#Multiple expenses belonging to the same user
+def test_multiple_expenses_same_user():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="same_user_expenses",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "same_user_expenses",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    expense1 = client.post(
+        "/expenses",
+        json={
+            "title": "Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers
+    )
+
+    expense2 = client.post(
+        "/expenses",
+        json={
+            "title": "Bus",
+            "amount": 50.0,
+            "category": "Travel",
+            "date": "2026-08-19"
+        },
+        headers=headers
+    )
+
+    assert expense1.status_code == 201
+    assert expense2.status_code == 201
+
+    response = client.get(
+        "/expenses",
+        headers=headers
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 2
+    assert len(result["items"]) == 2

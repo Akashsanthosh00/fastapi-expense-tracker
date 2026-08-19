@@ -4,6 +4,8 @@ from conftest import TestingSessionLocal
 from user_models import User
 from security import hash_password, SECRET_KEY, ALGORITHM
 from datetime import datetime, timedelta, timezone
+from expense_models import Expense as ExpenseModel
+from datetime import datetime, timedelta, timezone, date
 from jose import jwt
 
 client = TestClient(app)
@@ -1219,3 +1221,465 @@ def test_update_expense_invalid_expense_id():
     )
 
     assert response.status_code == 422
+
+#category filtering
+def test_get_expenses_category_filter():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="category_filter_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expense1 = ExpenseModel(
+        title="Lunch",
+        amount=250.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    expense2 = ExpenseModel(
+        title="Movie",
+        amount=500.0,
+        category="Entertainment",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    db.add_all([expense1, expense2])
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "category_filter_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        params={"category": "Food"},
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 1
+    assert len(result["items"]) == 1
+    assert result["items"][0]["category"] == "Food"
+
+#Title filtering
+def test_get_expenses_title_filter():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="title_filter_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expense1 = ExpenseModel(
+        title="Lunch",
+        amount=250.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    expense2 = ExpenseModel(
+        title="Movie",
+        amount=500.0,
+        category="Entertainment",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    db.add_all([expense1, expense2])
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "title_filter_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        params={"title": "Lunch"},
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 1
+    assert len(result["items"]) == 1
+    assert result["items"][0]["title"] == "Lunch"
+
+#date filtering
+def test_get_expenses_date_filter():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="date_filter_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expense1 = ExpenseModel(
+        title="Lunch",
+        amount=250.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    expense2 = ExpenseModel(
+        title="Dinner",
+        amount=400.0,
+        category="Food",
+        date=date(2026, 8, 19),
+        user_id=user.id
+    )
+
+    db.add_all([expense1, expense2])
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "date_filter_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        params={"date": "2026-08-18"},
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 1
+    assert len(result["items"]) == 1
+    assert result["items"][0]["date"] == "2026-08-18"
+
+#Amount filtering
+def test_get_expenses_amount_filter():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="amount_filter_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expense1 = ExpenseModel(
+        title="Lunch",
+        amount=250.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    expense2 = ExpenseModel(
+        title="Movie",
+        amount=500.0,
+        category="Entertainment",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    db.add_all([expense1, expense2])
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "amount_filter_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        params={"amount": 500.0},
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 1
+    assert len(result["items"]) == 1
+    assert result["items"][0]["amount"] == 500.0
+
+#Pagination
+def test_get_expenses_pagination():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="pagination_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expenses = [
+        ExpenseModel(
+            title=f"Expense {i}",
+            amount=100.0 + i,
+            category="Food",
+            date=date(2026, 8, 18),
+            user_id=user.id
+        )
+        for i in range(1, 6)
+    ]
+
+    db.add_all(expenses)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "pagination_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        params={
+            "page": 1,
+            "limit": 2
+        },
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["page"] == 1
+    assert result["limit"] == 2
+    assert result["total"] == 5
+    assert len(result["items"]) == 2
+
+#Multiple expenses
+def test_get_multiple_expenses():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="multiple_expenses_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expenses = [
+        ExpenseModel(
+            title="Lunch",
+            amount=250.0,
+            category="Food",
+            date=date(2026, 8, 18),
+            user_id=user.id
+        ),
+        ExpenseModel(
+            title="Movie",
+            amount=500.0,
+            category="Entertainment",
+            date=date(2026, 8, 18),
+            user_id=user.id
+        ),
+        ExpenseModel(
+            title="Bus",
+            amount=50.0,
+            category="Travel",
+            date=date(2026, 8, 18),
+            user_id=user.id
+        )
+    ]
+
+    db.add_all(expenses)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "multiple_expenses_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 3
+    assert len(result["items"]) == 3
+
+#User with no expenses
+def test_get_expenses_user_with_no_expenses():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="no_expenses_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "no_expenses_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 0
+    assert result["items"] == []
+
+#sorting
+def test_get_expenses_sorting():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="sorting_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    expense1 = ExpenseModel(
+        title="Expensive",
+        amount=500.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    expense2 = ExpenseModel(
+        title="Cheap",
+        amount=100.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    expense3 = ExpenseModel(
+        title="Medium",
+        amount=300.0,
+        category="Food",
+        date=date(2026, 8, 18),
+        user_id=user.id
+    )
+
+    db.add_all([expense1, expense2, expense3])
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "sorting_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/expenses",
+        params={
+            "sort_by": "amount",
+            "order": "asc"
+        },
+        headers={
+            "Authorization": f"Bearer {access_token}"
+        }
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert result["total"] == 3
+    assert len(result["items"]) == 3
+
+    assert result["items"][0]["amount"] == 100.0
+    assert result["items"][1]["amount"] == 300.0
+    assert result["items"][2]["amount"] == 500.0

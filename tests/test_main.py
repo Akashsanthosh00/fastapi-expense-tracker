@@ -940,3 +940,282 @@ def test_get_expenses_with_expired_token():
     )
 
     assert response.status_code == 401
+
+
+# POST expense with a negative amount
+def test_create_expense_negative_amount():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="negative_amount_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "negative_amount_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={
+            "title": "Lunch",
+            "amount": -250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+# amount = 0
+def test_create_expense_zero_amount():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="zero_amount_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "zero_amount_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={
+            "title": "Lunch",
+            "amount": 0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+# invalid category.
+def test_create_expense_invalid_category():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="invalid_category_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "invalid_category_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={
+            "title": "Lunch",
+            "amount": 250.0,
+            "category": "InvalidCategory",
+            "date": "2026-08-18"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+# title validation test
+def test_create_expense_without_title():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="missing_title_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "missing_title_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={
+            "amount": 250.0,
+            "category": "Food",
+            "date": "2026-08-18"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+
+#invalid date
+def test_create_expense_invalid_date():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="invalid_date_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "invalid_date_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={
+            "title": "Lunch",
+            "amount": 250.0,
+            "category": "Food",
+            "date": "invalid-date"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+#Missing required fields
+def test_create_expense_missing_required_fields():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="missing_fields_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "missing_fields_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.post(
+        "/expenses",
+        json={},
+        headers=headers
+    )
+
+    assert response.status_code == 422
+
+#Invalid expense_id
+def test_update_expense_invalid_expense_id():
+
+    db = TestingSessionLocal()
+
+    user = User(
+        username="invalid_expense_id_user",
+        password=hash_password("Test@123")
+    )
+
+    db.add(user)
+    db.commit()
+
+    login_response = client.post(
+        "/login",
+        data={
+            "username": "invalid_expense_id_user",
+            "password": "Test@123"
+        }
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    response = client.put(
+        "/expenses",
+        params={
+            "expense_id": "abc"
+        },
+        json={
+            "title": "Updated Lunch",
+            "amount": 300.0,
+            "category": "Food",
+            "date": "2026-08-19"
+        },
+        headers=headers
+    )
+
+    assert response.status_code == 422

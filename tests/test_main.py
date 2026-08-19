@@ -2,7 +2,9 @@ from fastapi.testclient import TestClient
 from main import app
 from conftest import TestingSessionLocal
 from user_models import User
-from security import hash_password
+from security import hash_password, SECRET_KEY, ALGORITHM
+from datetime import datetime, timedelta, timezone
+from jose import jwt
 
 client = TestClient(app)
 
@@ -886,3 +888,55 @@ def test_login_missing_username():
     )
 
     assert response.status_code == 422
+
+# invalid JWT token
+def test_get_expenses_with_invalid_token():
+
+    headers = {
+        "Authorization": "Bearer invalid_token"
+    }
+
+    response = client.get(
+        "/expenses",
+        headers=headers
+    )
+
+    assert response.status_code == 401
+
+# malformed JWT.
+def test_get_expenses_with_malformed_token():
+
+    headers = {
+        "Authorization": "Bearer abc.def.ghi"
+    }
+
+    response = client.get(
+        "/expenses",
+        headers=headers
+    )
+
+    assert response.status_code == 401
+
+# expired JWT
+def test_get_expenses_with_expired_token():
+
+    expired_token = jwt.encode(
+        {
+            "sub": "1",
+            "username": "expired_user",
+            "exp": datetime.now(timezone.utc) - timedelta(minutes=1)
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+    headers = {
+        "Authorization": f"Bearer {expired_token}"
+    }
+
+    response = client.get(
+        "/expenses",
+        headers=headers
+    )
+
+    assert response.status_code == 401

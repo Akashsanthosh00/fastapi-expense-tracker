@@ -7,6 +7,7 @@ from expense_models import Expense as ExpenseModel
 from sqlalchemy.orm import Session
 from security import verify_token
 from typing import List
+import time
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ router = APIRouter()
 # 1. Filtering
 # 2. Sorting
 # 3. Pagination
-# ============================================================
+# ============================= ===============================
 
 @router.get("/expenses", response_model=ExpensePagination)
 def get_expenses(
@@ -51,6 +52,8 @@ def get_expenses(
     # Database session
     db: Session = Depends(get_db)
 ):
+    start = time.perf_counter()
+
     user_id = int(current_user["sub"])
     
     # Start a query for the Expense table
@@ -91,9 +94,6 @@ def get_expenses(
     else:
         order_by = sort_column.desc()
 
-    # Apply the sorting instruction to the query
-    query = query.order_by(order_by)
-
     # ========================================================
     # 3. COUNT TOTAL RESULTS
     # ========================================================
@@ -103,6 +103,9 @@ def get_expenses(
     # not the number returned on the current page.
     total = query.count()
 
+    # Apply the sorting instruction to the query
+    query = query.order_by(order_by)
+
     # ========================================================
     # 4. PAGINATION
     # ========================================================
@@ -111,6 +114,9 @@ def get_expenses(
     # Skip the required number of records
     # and retrieve only 'limit' records.
     result = query.offset(offset).limit(limit).all()
+
+    db_time = (time.perf_counter() - start) * 1000
+    print(f"DB operation time: {db_time:.2f} ms")
 
     # ========================================================
     # 5. RESPONSE

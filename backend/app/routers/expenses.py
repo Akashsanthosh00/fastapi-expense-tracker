@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
-from schemas import (
-    ExpenseCreate, Expense, ExpenseUpdate, ExpensePagination, SortField, SortOrder
-    )
-from database import get_db
-from expense_models import Expense as ExpenseModel
+from backend.app.schemas.expense import (
+    ExpenseCreate,
+    Expense,
+    ExpenseUpdate,
+    ExpensePagination,
+    SortField,
+    SortOrder
+)
+
+from backend.app.database.database import get_db
+from backend.app.database.models.expense import Expense as ExpenseModel
+from backend.app.core.security import verify_token
 from sqlalchemy.orm import Session
-from security import verify_token
 from typing import List
 import time
 

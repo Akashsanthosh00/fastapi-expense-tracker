@@ -1,18 +1,14 @@
 from passlib.context import CryptContext
-from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import HTTPException, status, Depends
+from backend.app.core.config import settings
 import datetime
-import os
 import jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-load_dotenv()
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
@@ -27,7 +23,7 @@ def verify_password(plain_password, hashed_password):
 
 def create_access_token(user_id, username):
     expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     payload = {
@@ -36,14 +32,14 @@ def create_access_token(user_id, username):
         "exp": expire
     }
 
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def verify_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(
             token, 
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
         ) # here the pyJWT takes the token apart -> HEADER.PAYLOAD.SIGNATURE
         #THEN IT WILL CREATE A NEW SIGNATURE USING THE HEADER AND PAYLOAD DATA FROM THE TOKEN, AND
         # SECRET_KEY THAT WE PASSED, NOW IT WILL COMPARE THE SIGNATURE IN THE TOKEN AND

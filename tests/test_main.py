@@ -1,10 +1,10 @@
 from fastapi.testclient import TestClient
-from main import app
+from backend.app.main import app
 from conftest import TestingSessionLocal
-from user_models import User
-from security import hash_password, SECRET_KEY, ALGORITHM
+from backend.app.database.models.user import User
+from backend.app.core.security import hash_password, SECRET_KEY, ALGORITHM
 from datetime import datetime, timedelta, timezone
-from expense_models import Expense as ExpenseModel
+from backend.app.database.models.expense import Expense as ExpenseModel
 from datetime import datetime, timedelta, timezone, date
 from jose import jwt
 import pytest

@@ -1,5 +1,5 @@
-from database import Base
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from backend.app.database.database import Base
 
 class Expense(Base):
     __tablename__ = "expenses"

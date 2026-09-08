@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database import Base, get_db
-from main import app
+from backend.app.database.database import Base, get_db
+from backend.app.main import app
 from fastapi.testclient import TestClient
 
 

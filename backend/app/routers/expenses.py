@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, Query, Depends
 from backend.app.schemas.expense import (
     ExpenseCreate,
     Expense,
@@ -7,13 +7,16 @@ from backend.app.schemas.expense import (
     SortField,
     SortOrder
 )
-
+from backend.app.services.expense_service import (
+    get_expenses,
+    create_expense, 
+    delete_expense, 
+    update_expense, 
+    update_partial_expense)
 from backend.app.database.database import get_db
-from backend.app.database.models.expense import Expense as ExpenseModel
 from backend.app.core.security import verify_token
 from sqlalchemy.orm import Session
 from typing import List
-import time
 
 router = APIRouter()
 
@@ -26,7 +29,7 @@ router = APIRouter()
 # ============================= ===============================
 
 @router.get("/expenses", response_model=ExpensePagination)
-def get_expenses(
+def get_expenses_endpoint(
     #JWT verification
     current_user = Depends(verify_token),
 
@@ -58,112 +61,48 @@ def get_expenses(
     # Database session
     db: Session = Depends(get_db)
 ):
-    start = time.perf_counter()
+    
 
     user_id = int(current_user["sub"])
     
-    # Start a query for the Expense table
-    query = db.query(ExpenseModel).filter(
-        ExpenseModel.user_id == user_id
+    return get_expenses(
+        db = db,
+        user_id = user_id,
+        category = category,
+        date = date,
+        title = title,
+        amount = amount,
+        page = page,
+        limit = limit,
+        sort_by = sort_by,
+        order = order
     )
-
-    # ========================================================
-    # 1. FILTERING
-    # ========================================================
-    if category:
-        query = query.filter(ExpenseModel.category.in_(category))
-
-    if date:
-        query = query.filter(ExpenseModel.date.in_(date))
-
-    if title:
-        query = query.filter(ExpenseModel.title.in_(title))
-
-    if amount:
-        query = query.filter(ExpenseModel.amount.in_(amount))
-
-    # ========================================================
-    # 2. SORTING
-    # ========================================================
-
-    # Convert the user's sort_by choice
-    # into the corresponding SQLAlchemy column.
-    if sort_by == SortField.id:
-        sort_column = ExpenseModel.id
-    elif sort_by == SortField.amount:
-        sort_column = ExpenseModel.amount
-    elif sort_by == SortField.date:
-        sort_column = ExpenseModel.date
-
-    if order == SortOrder.asc:
-        order_by = sort_column.asc()
-    else:
-        order_by = sort_column.desc()
-
-    # ========================================================
-    # 3. COUNT TOTAL RESULTS
-    # ========================================================
-
-    # Count how many expenses match the filters.
-    # This is the total number of matching records,
-    # not the number returned on the current page.
-    total = query.count()
-
-    # Apply the sorting instruction to the query
-    query = query.order_by(order_by)
-
-    # ========================================================
-    # 4. PAGINATION
-    # ========================================================
-    offset = (page-1) * limit
-
-    # Skip the required number of records
-    # and retrieve only 'limit' records.
-    result = query.offset(offset).limit(limit).all()
-
-    db_time = (time.perf_counter() - start) * 1000
-    print(f"DB operation time: {db_time:.2f} ms")
-
-    # ========================================================
-    # 5. RESPONSE
-    # ========================================================
-    return {
-        "items": result,
-        "page": page,
-        "limit": limit,
-        "total": total
-    }
 
 # ============================================================
 # POST / ADD EXPENSE
 # ===========================================================
-@router.post("/expenses",response_model=Expense,status_code=201)
-def add_expense(expense: ExpenseCreate, 
-                current_user: dict = Depends(verify_token),
-                db: Session = Depends(get_db)):
-
+@router.post("/expenses", response_model=Expense, status_code=201)
+def add_expense(
+    expense: ExpenseCreate,
+    current_user: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    # Get the logged-in user's ID from the JWT payload.
+    # This ensures the expense is associated with the correct user.
     user_id = int(current_user["sub"])
 
-    # Create a new ExpenseModel object
-    # using the data received from the request.
-    new_expense = ExpenseModel(
-        title=expense.title,
-        amount=expense.amount,
-        category=expense.category,
-        date=expense.date,
+    # The router handles HTTP-related responsibilities such as:
+    # - receiving the request
+    # - validating input through Pydantic
+    # - getting the authenticated user
+    # - getting the database session
+    #
+    # The actual expense creation logic is handled by the service layer.
+    return create_expense(
+        db=db,
+        expense=expense,
         user_id=user_id
     )
-
-    # Add the new expense to the database session
-    db.add(new_expense)
-
-    # Permanently save the changes
-    db.commit()
-
-    db.refresh(new_expense)
-
-    # Return the newly created expense
-    return new_expense
 
 # ============================================================
 # DELETE EXPENSE BY ID
@@ -173,82 +112,52 @@ def delete_by_id(expense_id: int,
                  current_user: dict = Depends(verify_token),
                  db: Session = Depends(get_db)):
     
-    # Get the userid
-    user = int(current_user["sub"])
+    # Get the logged-in user's ID from the JWT payload.
+    user_id = int(current_user["sub"])
 
-    # Find the specific expense belonging to the logged-in user
-    result = db.query(ExpenseModel).filter(
-            ExpenseModel.user_id == user,
-            ExpenseModel.id == expense_id
-        ).first()
-
-    if result:
-        db.delete(result)
-        db.commit()
-        return {"message": "Expense deleted successfully"}
-
-    raise HTTPException(status_code=404, detail="Expense not found")
+    return delete_expense(
+        db = db,
+        expense_id = expense_id,
+        user_id = user_id
+    )
 
 
 # ============================================================
 # PUT / COMPLETE UPDATE
 # ============================================================
 @router.put("/expenses", response_model=Expense)
-def update_expense(expense_id: int, 
+def update_expense_endpoint(expense_id: int, 
                    expense: ExpenseCreate,
                    current_user: dict = Depends(verify_token),
                    db: Session = Depends(get_db)
                    ):
     
-    # Get the user
-    user = int(current_user["sub"])
+    # Get the logged-in user's ID from the JWT payload.
+    user_id = int(current_user["sub"])
 
-    # Find the expense with the given ID that belongs to the logged-in user
-    result = db.query(ExpenseModel).filter(
-        ExpenseModel.user_id == user,
-        ExpenseModel.id == expense_id
-        ).first()
-
-    if result:
-        # Convert the Pydantic model into a dictionary
-        updated_data = expense.model_dump()
-
-        # Update every field received
-        for key, value in updated_data.items():
-            setattr(result, key, value)
-
-        db.commit()
-
-        return result
-
-    raise HTTPException(status_code=404, detail="Expense not found")
+    return update_expense(
+        db = db,
+        expense_id = expense_id,
+        user_id = user_id,
+        expense = expense
+    )
+    
 
 # ============================================================
 # PATCH / PARTIAL UPDATE
 # ============================================================
 @router.patch("/expenses", response_model=Expense)
-def update_partial_expense(expense_id: int, 
+def update_partial_expense_endpoint(expense_id: int, 
                            expense: ExpenseUpdate,
                            current_user: dict = Depends(verify_token),
                            db: Session = Depends(get_db)):
 
     # Get the userid
-    user = int(current_user["sub"])
+    user_id = int(current_user["sub"])
 
-    # Find the specific expense with the given ID that belongs to the logged-in user
-    result = db.query(ExpenseModel).filter(
-        ExpenseModel.user_id == user,
-        ExpenseModel.id == expense_id).first()
-
-    if result:
-        # Convert only the fields actually provided
-        # by the user into a dictionary.
-        updated_data = expense.model_dump(exclude_unset=True)
-
-        for key, value in updated_data.items():
-            setattr(result, key, value)
-
-        db.commit()
-        return result
-
-    raise HTTPException(status_code=404, detail="Expense not found!")
+    return update_partial_expense(
+        db = db,
+        expense_id = expense_id,
+        expense = expense,
+        user_id = user_id
+    )

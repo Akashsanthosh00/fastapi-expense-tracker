@@ -1,0 +1,2 @@
+class ExpenseNotFoundException(Exception):
+    pass

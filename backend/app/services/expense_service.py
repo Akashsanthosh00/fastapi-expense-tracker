@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from backend.app.database.models.expense import Expense as ExpenseModel
+from backend.app.core.exceptions import ExpenseNotFoundException
 from backend.app.schemas.expense import ExpenseCreate, ExpenseUpdate, SortField, SortOrder
-from fastapi import HTTPException
 from typing import List
 import time
 
@@ -139,7 +139,7 @@ def delete_expense(
         db.commit()
         return {"message": "Expense deleted successfully"}
 
-    raise HTTPException(status_code=404, detail="Expense not found")
+    raise ExpenseNotFoundException()
 
 
 def update_expense(
@@ -167,7 +167,7 @@ def update_expense(
 
         return result
 
-    raise HTTPException(status_code=404, detail="Expense not found")
+    raise ExpenseNotFoundException()
 
 
 def update_partial_expense(
@@ -194,4 +194,4 @@ def update_partial_expense(
         db.commit()
         return result
     
-    raise HTTPException(status_code=404, detail="Expense not found!")
+    raise ExpenseNotFoundException()

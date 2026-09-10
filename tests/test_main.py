@@ -421,7 +421,7 @@ def test_patch_nonexistent_expense():
 
     data = patch_response.json()
 
-    assert data["detail"] == "Expense not found!"
+    assert data["detail"] == "Expense not found"
 
 # GET expenses without a token
 def test_get_expenses_without_token():
@@ -718,7 +718,7 @@ def test_user_cannot_patch_another_users_expense():
 
     data = patch_response.json()
 
-    assert data["detail"] == "Expense not found!"
+    assert data["detail"] == "Expense not found"
 
 
 def test_user_cannot_see_another_users_expenses():

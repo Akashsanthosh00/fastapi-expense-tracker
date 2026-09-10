@@ -14,7 +14,7 @@ from backend.app.services.expense_service import (
     update_expense, 
     update_partial_expense)
 from backend.app.database.database import get_db
-from backend.app.core.security import verify_token
+from backend.app.core.security import get_current_user_id
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -30,8 +30,8 @@ router = APIRouter()
 
 @router.get("/expenses", response_model=ExpensePagination)
 def get_expenses_endpoint(
-    #JWT verification
-    current_user = Depends(verify_token),
+    # Get the logged-in user's ID from the JWT.
+    user_id: int = Depends(get_current_user_id),
 
     # -------------------------
     # Filtering parameters
@@ -62,9 +62,6 @@ def get_expenses_endpoint(
     db: Session = Depends(get_db)
 ):
     
-
-    user_id = int(current_user["sub"])
-    
     return get_expenses(
         db = db,
         user_id = user_id,
@@ -84,12 +81,9 @@ def get_expenses_endpoint(
 @router.post("/expenses", response_model=Expense, status_code=201)
 def add_expense(
     expense: ExpenseCreate,
-    current_user: dict = Depends(verify_token),
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    # Get the logged-in user's ID from the JWT payload.
-    # This ensures the expense is associated with the correct user.
-    user_id = int(current_user["sub"])
 
     # The router handles HTTP-related responsibilities such as:
     # - receiving the request
@@ -109,11 +103,8 @@ def add_expense(
 # ============================================================
 @router.delete("/expenses")
 def delete_by_id(expense_id: int,
-                 current_user: dict = Depends(verify_token),
+                 user_id: int = Depends(get_current_user_id),
                  db: Session = Depends(get_db)):
-    
-    # Get the logged-in user's ID from the JWT payload.
-    user_id = int(current_user["sub"])
 
     return delete_expense(
         db = db,
@@ -128,12 +119,9 @@ def delete_by_id(expense_id: int,
 @router.put("/expenses", response_model=Expense)
 def update_expense_endpoint(expense_id: int, 
                    expense: ExpenseCreate,
-                   current_user: dict = Depends(verify_token),
+                   user_id: int = Depends(get_current_user_id),
                    db: Session = Depends(get_db)
                    ):
-    
-    # Get the logged-in user's ID from the JWT payload.
-    user_id = int(current_user["sub"])
 
     return update_expense(
         db = db,
@@ -149,11 +137,8 @@ def update_expense_endpoint(expense_id: int,
 @router.patch("/expenses", response_model=Expense)
 def update_partial_expense_endpoint(expense_id: int, 
                            expense: ExpenseUpdate,
-                           current_user: dict = Depends(verify_token),
+                           user_id: int = Depends(get_current_user_id),
                            db: Session = Depends(get_db)):
-
-    # Get the userid
-    user_id = int(current_user["sub"])
 
     return update_partial_expense(
         db = db,

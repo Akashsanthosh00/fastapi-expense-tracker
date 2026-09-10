@@ -54,3 +54,7 @@ def verify_token(token: str = Depends(oauth2_scheme)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
+
+def get_current_user_id(current_user: dict = Depends(verify_token)):
+    # Extract the logged-in user's ID from the JWT payload
+    return int(current_user["sub"])

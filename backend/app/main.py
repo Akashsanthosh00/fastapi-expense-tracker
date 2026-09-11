@@ -2,7 +2,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from backend.app.core.exceptions import ExpenseNotFoundException
 from backend.app.routers.expenses import router as expenses_router
+from backend.app.core.logging_config import setup_logging
 from backend.app.routers.users import router as users_router
+import logging
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Expense tracker API",
@@ -18,6 +24,9 @@ def expense_not_found_handler(
     request: Request,
     exc: ExpenseNotFoundException
 ):
+
+    #Log unexpected application errors
+    logger.error(f"Unexpected error: {exc}")
     return JSONResponse(
         status_code=404,
         content={"detail": "Expense not found"}

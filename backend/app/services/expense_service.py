@@ -3,8 +3,10 @@ from backend.app.database.models.expense import Expense as ExpenseModel
 from backend.app.core.exceptions import ExpenseNotFoundException
 from backend.app.schemas.expense import ExpenseCreate, ExpenseUpdate, SortField, SortOrder
 from typing import List
+import logging
 import time
 
+logger = logging.getLogger(__name__)
 
 def get_expenses(
         db: Session,
@@ -80,7 +82,7 @@ def get_expenses(
     result = query.offset(offset).limit(limit).all()
 
     db_time = (time.perf_counter() - start) * 1000
-    print(f"DB operation time: {db_time:.2f} ms")
+    logger.info(f"DB operation time: {db_time:.2f} ms")
 
     # ========================================================
     # 5. RESPONSE
@@ -116,6 +118,11 @@ def create_expense(
     # saved in the PostgreSQL database.
     db.commit()
 
+    # Log successful expense creation
+    logger.info(
+        f"User {user_id} created expense '{expense.title}'"
+    )
+
     # Refresh the object so SQLAlchemy loads the latest
     # database-generated values, such as the generated ID.
     db.refresh(new_expense)
@@ -137,7 +144,18 @@ def delete_expense(
     if result:
         db.delete(result)
         db.commit()
+
+        # Log successful expense deletion
+        logger.info(
+            f"User {user_id} deleted expense {expense_id}"
+        )
+
         return {"message": "Expense deleted successfully"}
+
+    # Log failed expense deletion
+    logger.warning(
+        f"User {user_id} attempted to delete expense {expense_id}, but it was not found"
+    )
 
     raise ExpenseNotFoundException()
 
@@ -165,7 +183,17 @@ def update_expense(
 
         db.commit()
 
+        # Log successful expense update
+        logger.info(
+            f"User {user_id} updated expense {expense_id}"
+        )
+
         return result
+
+    # Log failed expense update
+    logger.warning(
+        f"User {user_id} attempted to update expense {expense_id}, but it was not found"
+    )
 
     raise ExpenseNotFoundException()
 
@@ -192,6 +220,17 @@ def update_partial_expense(
             setattr(result, key, value)
 
         db.commit()
+
+        # Log successful expense update
+        logger.info(
+            f"User {user_id} partially updated expense {expense_id}"
+        )
+
         return result
+
+    # Log failed expense update
+    logger.warning(
+        f"User {user_id} attempted to update expense {expense_id}, but it was not found"
+    )
     
     raise ExpenseNotFoundException()

@@ -1,0 +1,194 @@
+.register-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    background: #0A0F1F;
+    color: #EEF2FF;
+
+    padding: 0 16px 40px;
+    box-sizing: border-box;
+
+    background-image:
+        radial-gradient(
+            60% 40% at 50% 0%,
+            rgba(255, 176, 32, 0.12),
+            transparent
+        );
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5vh;
+    margin-bottom: 4vh;
+}
+
+.logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    height: 32px;
+
+    border-radius: 8px;
+
+    background: #FFB020;
+    color: #0A0F1F;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.brand > span:last-child {
+    font-size: 18px;
+    font-weight: 600;
+    color: #EEF2FF;
+}
+
+.register-page h2 {
+    font-size: 24px;
+    margin: 0 0 8px;
+    color: #EEF2FF;
+}
+
+.register-page > p {
+    margin: 0 0 24px;
+    color: #9AA5C7;
+    font-size: 14px;
+    text-align: center;
+}
+
+.register-page form {
+    width: 100%;
+    text-align: left;
+
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.register-page form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.register-page label {
+    color: #9AA5C7;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 340px;
+
+    padding: 24px;
+    box-sizing: border-box;
+
+    background: #121A33;
+    border: 1px solid #26325A;
+    border-radius: 16px;
+
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-container input {
+    width: 100%;
+    box-sizing: border-box;
+
+    background: #0A0F1F;
+    color: #EEF2FF;
+
+    padding: 10px 12px;
+
+    border: 1px solid #26325A;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.login-container input::placeholder {
+    color: rgba(154, 165, 199, 0.6);;
+}
+
+.login-container input:focus {
+    border-color: #FFB020;
+    box-shadow: 0 0 0 3px rgba(255, 176, 32, 0.2);
+}
+
+.login-container button {
+    display: block;
+    width: 100%;
+
+    margin-top: 8px;
+    padding: 10px 16px;
+
+    border: none;
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    background: #FFB020;
+    color: #0A0F1F;
+
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+
+    transition: opacity 0.2s ease;
+}
+
+.login-container button:hover {
+    opacity: 0.9;
+}
+
+.register-link {
+    width: 100%;
+    max-width: 340px;
+
+    box-sizing: border-box;
+
+    margin-top: 16px;
+    padding: 12px 16px;
+
+    text-align: center;
+
+    background: transparent;
+    border: 1px solid #26325A;
+    border-radius: 8px;
+
+    font-size: 14px;
+    color: #8B96B8;
+}
+
+.register-link a {
+    color: #22D3C5;
+    text-decoration: none;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
+
+@media (min-width: 768px) {
+    .register-page form {
+        max-width: 300px;
+    }
+
+    .register-page label {
+        font-size: 14px;
+        font-weight: 500;
+    }
+}

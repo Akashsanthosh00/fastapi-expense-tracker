@@ -192,3 +192,9 @@
         font-weight: 500;
     }
 }
+
+.username-error {
+    margin: 0;
+    color: #FB7185;
+    font-size: 12px;
+}

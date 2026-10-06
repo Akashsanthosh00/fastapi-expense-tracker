@@ -28,6 +28,16 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
+@router.get("/check-username")
+def check_username(username: str, db: Session = Depends(get_db)):
+    existing_user = db.query(UserModel).filter(
+        UserModel.username == username
+    ).first()
+
+    return {
+        "available": existing_user is None
+    }
+
 @router.post("/login")
 def login_user(user: OAuth2PasswordRequestForm = Depends(), 
                db: Session = Depends(get_db)):

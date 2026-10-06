@@ -4,6 +4,7 @@ from backend.app.core.exceptions import ExpenseNotFoundException
 from backend.app.routers.expenses import router as expenses_router
 from backend.app.core.logging_config import setup_logging
 from backend.app.routers.users import router as users_router
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 setup_logging()
@@ -14,6 +15,14 @@ app = FastAPI(
     title="Expense tracker API",
     description="A REST API for managing personal expenses",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(expenses_router)

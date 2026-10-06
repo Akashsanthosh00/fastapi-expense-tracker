@@ -8,20 +8,35 @@ function Register() {
 
     const [username, setUsername] = useState("")
 
+    const [usernameAvailability, setUsernameAvailability] = useState(null)
+
+    const [focusedField, setFocusedField] = useState<
+        "username" | "email" | null
+    >(null);
+
     useEffect(() => {
 
-        if (username.length < 5){
-            return
-        }
+        const timer = setTimeout(async () => {
 
-        const timer = setTimeout(() => {
-            console.log("Checking username...")
-        }, 400)
+            if (username.length < 5){
+                setUsernameAvailability(null);
+                return;
+            }
+
+            const response = await fetch(
+                `http://localhost:8000/check-username?username=${username}`
+            );
+
+            const data = await response.json();
+
+            setUsernameAvailability(data.available)
+
+        }, 400);
 
         return () => {
             clearTimeout(timer)
-        }
-    }, [username])
+        };
+    }, [username]);
 
   return (
     <div className="register-page">
@@ -46,9 +61,28 @@ function Register() {
                         placeholder='e.g. akash_s'
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
+                        onFocus={() => setFocusedField("username")}
                         minLength={5}
                         maxLength={20}
+                        spellCheck={false}
+                        autoComplete='username'
                     />
+
+                    {focusedField === "username" && 
+                        username.length >= 5 && 
+                        usernameAvailability === true &&(
+                        <p className='username-available'>
+                            ✓ Username available
+                        </p>
+                    )}
+
+                    {focusedField === "username" && 
+                        username.length >= 5 && 
+                        usernameAvailability === false &&(
+                        <p className='username-taken'>
+                            ✕ Username already taken
+                        </p>
+                    )}
 
                     {username.length > 0 && username.length < 5 && (
                         <p className='username-error'>
@@ -59,7 +93,12 @@ function Register() {
 
                 <div>
                     <label htmlFor="email">Email</label>
-                    <input id='email' type="email" placeholder='you@example.com'/>
+                    <input 
+                        id='email' 
+                        type="email" 
+                        placeholder='you@example.com'
+                        onFocus={() => setFocusedField("email")}
+                    />
                 </div>
 
                 <div>

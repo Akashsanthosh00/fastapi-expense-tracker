@@ -198,3 +198,15 @@
     color: #FB7185;
     font-size: 12px;
 }
+
+.username-available {
+    margin: 0;
+    color: #51e453;
+    font-size: 12px;
+}
+
+.username-taken {
+    margin: 0;
+    color: #FB7185;
+    font-size: 12px;
+}

@@ -20,7 +20,7 @@ def password_validation(value):
 
 class UserCreate(BaseModel):
     username: str = Field(min_length=5)
-    password: str = Field(min_length=6, max_length=16)
+    password: str = Field(min_length=8, max_length=16)
 
     @field_validator("password")
     @classmethod

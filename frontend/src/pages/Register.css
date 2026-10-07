@@ -128,7 +128,7 @@
     box-shadow: 0 0 0 3px rgba(255, 176, 32, 0.2);
 }
 
-.login-container button {
+.submit-button {
     display: block;
     width: 100%;
 
@@ -150,7 +150,7 @@
     transition: opacity 0.2s ease;
 }
 
-.login-container button:hover {
+.submit-button:hover {
     opacity: 0.9;
 }
 
@@ -193,6 +193,14 @@
     }
 }
 
+.login-container input:-webkit-autofill,
+.login-container input:-webkit-autofill:hover,
+.login-container input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #EEF2FF;
+    -webkit-box-shadow: 0 0 0px 1000px #0A0F1F inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
 .username-error {
     margin: 0;
     color: #FB7185;
@@ -206,6 +214,79 @@
 }
 
 .username-taken {
+    margin: 0;
+    color: #FB7185;
+    font-size: 12px;
+}
+
+.password-input-wrapper{
+    position: relative;
+}
+
+.password-input-wrapper input {
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: auto;
+    margin: 0;
+    padding: 0;
+
+    background: transparent;
+    color: #9AA5C7;
+
+    border: none;
+    cursor: pointer;
+
+    font-size: 16px;
+    line-height: 1;
+}
+
+.password-toggle:hover {
+    opacity: 1;
+    color: #EEF2FF;
+}
+
+.password-toggle:focus {
+    outline: none;
+}
+
+.password-rules p {
+    margin: 6px 0;
+    color: #d1d5db;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.password-rules div {
+    font-size: 12px;
+    margin: 3px 0;
+}
+
+.rule-invalid{
+    margin: 0;
+    color: #FB7185;
+    font-size: 12px;
+}
+
+.rule-valid{
+    margin: 0;
+    color: #51e453;
+    font-size: 12px;
+}
+
+.password-match {
+    margin: 0;
+    color: #51e453;
+    font-size: 12px;
+}
+
+.password-mismatch {
     margin: 0;
     color: #FB7185;
     font-size: 12px;

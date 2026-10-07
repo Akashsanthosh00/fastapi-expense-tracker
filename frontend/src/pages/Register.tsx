@@ -1,18 +1,33 @@
 import { useState, useEffect } from 'react';
 import './Register.css'
+import { Eye, EyeOff } from "lucide-react";
 
 function Register() {
 
-    const [showPassword, setShowPassword] = useState(false)
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const [username, setUsername] = useState("")
+    const [username, setUsername] = useState("");
 
-    const [usernameAvailability, setUsernameAvailability] = useState(null)
+    const [usernameAvailability, setUsernameAvailability] = useState(null);
 
     const [focusedField, setFocusedField] = useState<
-        "username" | "email" | null
+        "username" | "email" |"password" | "confirmPassword" | null
     >(null);
+
+    const [email, setEmail] = useState("");
+
+    const [password, setPassword] = useState("");
+
+    const passwordRules = {
+        length: password.length >= 8 && password.length <= 16,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[^A-Za-z0-9]/.test(password),
+    }
+
+    const [confirmPassword, setConfirmPassword] = useState("");
 
     useEffect(() => {
 
@@ -96,6 +111,8 @@ function Register() {
                     <input 
                         id='email' 
                         type="email" 
+                        value = {email}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder='you@example.com'
                         onFocus={() => setFocusedField("email")}
                     />
@@ -103,35 +120,95 @@ function Register() {
 
                 <div>
                     <label htmlFor="password">Password</label>
-                    <input 
-                        id="password" 
-                        type={showPassword ? "text": "password"}
-                        placeholder='Min. 12 characters'
-                    />
 
-                    <button 
-                        type='button' onClick={() => 
-                        setShowPassword(!showPassword)}
+                    <div className='password-input-wrapper'>
+                        <input 
+                            id="password"
+                            value = {password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            type={showPassword ? "text": "password"}
+                            placeholder='Min. 8 characters'
+                            minLength={8}
+                            maxLength={16}
+                            onFocus={() => setFocusedField("password")}
+                        />
+
+                        <button
+                            type='button'
+                            className='password-toggle'
+                            onClick={ () => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? "Hide password": "Show password"}
                         >
-                        {showPassword ? "Hide": "Show"}
-                    </button>
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+
+                    </div>
+
+                    {focusedField === "password" && (
+                        <div className='password-rules'>
+                            <p>Password must contain:</p>
+
+                            <div className={passwordRules.length ? "rule-valid" : "rule-invalid"}>
+                                {passwordRules.length ? "✓" : "✕"} 8-16 characters
+                            </div>
+
+                            <div className={passwordRules.uppercase ? "rule-valid" : "rule-invalid"}>
+                                {passwordRules.uppercase ? "✓" : "✕"} one uppercase letter
+                            </div>
+
+                            <div className={passwordRules.lowercase ? "rule-valid" : "rule-invalid"}>
+                                {passwordRules.lowercase ? "✓" : "✕"} one lowercase letter
+                            </div>
+
+                            <div className={passwordRules.number ? "rule-valid" : "rule-invalid"}>
+                                {passwordRules.number ? "✓" : "✕"} one number
+                            </div>
+
+                            <div className={passwordRules.special ? "rule-valid" : "rule-invalid"}>
+                                {passwordRules.special ? "✓" : "✕"} one special character
+                            </div>
+
+                        </div>
+                    )}
 
                 </div>
 
                 <div>
                     <label htmlFor="confirm-password">Confirm Password</label>
-                    <input 
-                        id="confirm-password" 
-                        type={showConfirmPassword ? "text": "password"} 
-                        placeholder='Re-enter your password' 
-                    />
 
-                    <button 
-                        type='button' onClick={() => 
-                        setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                            {showConfirmPassword ? "Hide": "Show"}
-                    </button>
+                    <div className='password-input-wrapper'>
+                        <input 
+                            id="confirm-password" 
+                            type={showConfirmPassword ? "text": "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder='Re-enter your password'
+                            onFocus={() => setFocusedField("confirmPassword")}
+                        />
+
+                        <button 
+                            type='button'
+                            className='password-toggle'
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            aria-label={showConfirmPassword ? "Hide": "Show"}
+                            >
+                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+
+                    </div>
+
+                    {focusedField === "confirmPassword" && confirmPassword.length > 0 && (
+                        <p className={
+                            password === confirmPassword
+                                ? "password-match"
+                                : "password-mismatch"
+                        }>
+                            {password === confirmPassword
+                                ? "✓ Passwords match"
+                                : "✕ Passwords do not match"
+                            }
+                        </p>
+                    )}
                 </div>
 
                 <button className='submit-button'>Create account</button>

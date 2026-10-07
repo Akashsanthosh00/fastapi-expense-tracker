@@ -19,6 +19,8 @@ function Register() {
 
     const [password, setPassword] = useState("");
 
+    const [submitError, setSubmitError] = useState("")
+
     const passwordRules = {
         length: password.length >= 8 && password.length <= 16,
         uppercase: /[A-Z]/.test(password),
@@ -28,6 +30,35 @@ function Register() {
     }
 
     const [confirmPassword, setConfirmPassword] = useState("");
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        setSubmitError("");
+
+        if (usernameAvailability !== true){
+            setSubmitError("Please choose an available username.");
+            return;
+        }
+
+        if (
+            !passwordRules.length ||
+            !passwordRules.uppercase ||
+            !passwordRules.lowercase ||
+            !passwordRules.number ||
+            !passwordRules.special
+        ){
+            setSubmitError("Please fix the password requirements.");
+            return;
+        }
+
+        if (password !== confirmPassword){
+            setSubmitError("Passwords do not match.");
+            return;
+        }
+
+        console.log("Form submitted")
+    }
 
     useEffect(() => {
 
@@ -66,7 +97,7 @@ function Register() {
 
         <div className="login-container">
 
-            <form>
+            <form onSubmit={handleSubmit}>
                 <div>
                     <label htmlFor='username'>Username</label>
 
@@ -75,12 +106,13 @@ function Register() {
                         type="text" 
                         placeholder='e.g. akash_s'
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
                         onFocus={() => setFocusedField("username")}
                         minLength={5}
                         maxLength={20}
                         spellCheck={false}
                         autoComplete='username'
+                        required
                     />
 
                     {focusedField === "username" && 
@@ -115,6 +147,7 @@ function Register() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder='you@example.com'
                         onFocus={() => setFocusedField("email")}
+                        required
                     />
                 </div>
 
@@ -131,6 +164,7 @@ function Register() {
                             minLength={8}
                             maxLength={16}
                             onFocus={() => setFocusedField("password")}
+                            required
                         />
 
                         <button
@@ -184,6 +218,7 @@ function Register() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder='Re-enter your password'
                             onFocus={() => setFocusedField("confirmPassword")}
+                            required
                         />
 
                         <button 
@@ -210,6 +245,12 @@ function Register() {
                         </p>
                     )}
                 </div>
+
+                {submitError && (
+                    <p className='submit-error'>
+                        {submitError}
+                    </p>
+                )}
 
                 <button className='submit-button'>Create account</button>
             </form>

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import './Register.css'
 import { Eye, EyeOff } from "lucide-react";
 
+type UsernameStatus = "idle" | "checking" | "available" | "taken" | "error";
+
 function Register() {
 
     const [showPassword, setShowPassword] = useState(false);
@@ -9,11 +11,16 @@ function Register() {
 
     const [username, setUsername] = useState("");
 
-    const [usernameAvailability, setUsernameAvailability] = useState(null);
+    const [touched, setTouched] = useState({
+        username: false,
+        email: false,
+        password: false,
+        confirmPassword: false,
+    });
 
-    const [focusedField, setFocusedField] = useState<
-        "username" | "email" |"password" | "confirmPassword" | null
-    >(null);
+    const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+
+    const [focusedField, setFocusedField] = useState<"password" | null>(null);
 
     const [email, setEmail] = useState("");
 
@@ -22,7 +29,7 @@ function Register() {
     const [submitError, setSubmitError] = useState("")
 
     const passwordRules = {
-        length: password.length >= 8 && password.length <= 16,
+        length: password.length >= 8 && password.length <= 64,
         uppercase: /[A-Z]/.test(password),
         lowercase: /[a-z]/.test(password),
         number: /[0-9]/.test(password),
@@ -30,14 +37,41 @@ function Register() {
     }
 
     const [confirmPassword, setConfirmPassword] = useState("");
+    const usernameIsValid = /^[a-zA-Z0-9_]{5,20}$/.test(username);
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const emailIsValid = 
+                        normalizedEmail.length <= 254 &&
+                        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         setSubmitError("");
 
-        if (usernameAvailability !== true){
+        if (!usernameIsValid){
+            setSubmitError("Please enter a valid username.");
+            return;
+        }
+
+        if (usernameStatus === "checking"){
+            setSubmitError("Please wait while we check your username.");
+            return;
+        }
+
+        if (usernameStatus === "error"){
+            setSubmitError("Unable to check username. Please try again.");
+            return;
+        }
+
+        if (usernameStatus !== "available"){
             setSubmitError("Please choose an available username.");
+            return;
+        }
+
+        if (!emailIsValid){
+            setSubmitError('Please enter a valid email address');
             return;
         }
 
@@ -61,28 +95,48 @@ function Register() {
     }
 
     useEffect(() => {
+        const controller = new AbortController();
 
         const timer = setTimeout(async () => {
 
-            if (username.length < 5){
-                setUsernameAvailability(null);
+            if (username.length < 5 || !usernameIsValid){
+                setUsernameStatus("idle");
                 return;
             }
 
-            const response = await fetch(
-                `http://localhost:8000/check-username?username=${username}`
-            );
+            setUsernameStatus("checking")
 
-            const data = await response.json();
+            try {
+                const response = await fetch(
+                    `http://localhost:8000/check-username?username=${encodeURIComponent(username)}`,
+                    {signal: controller.signal}
+                );
 
-            setUsernameAvailability(data.available)
+                if (!response.ok){
+                    throw new Error("Failed to check username");
+                }
+
+                const data = await response.json();
+
+                setUsernameStatus(
+                    data.available ? "available" : "taken"
+                );
+
+            } catch (error) {
+                if (error instanceof DOMException && error.name === "AbortError"){
+                    return;
+                }
+
+                setUsernameStatus("error");
+            }
 
         }, 400);
 
         return () => {
-            clearTimeout(timer)
+            clearTimeout(timer);
+            controller.abort();
         };
-    }, [username]);
+    }, [username, usernameIsValid]);
 
   return (
     <div className="register-page">
@@ -97,7 +151,7 @@ function Register() {
 
         <div className="login-container">
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
                 <div>
                     <label htmlFor='username'>Username</label>
 
@@ -106,8 +160,10 @@ function Register() {
                         type="text" 
                         placeholder='e.g. akash_s'
                         value={username}
-                        onChange={(e) => setUsername(e.target.value.replace(/\s/g, ""))}
-                        onFocus={() => setFocusedField("username")}
+                        onChange={(e) => {setUsername(e.target.value);
+                            setUsernameStatus("idle")
+                        }}
+                        onBlur={() => setTouched(prev => ({ ...prev, username:true}))}
                         minLength={5}
                         maxLength={20}
                         spellCheck={false}
@@ -115,40 +171,60 @@ function Register() {
                         required
                     />
 
-                    {focusedField === "username" && 
-                        username.length >= 5 && 
-                        usernameAvailability === true &&(
-                        <p className='username-available'>
+                    {touched.username && username.length > 0 && !usernameIsValid && (
+                        <p className='username-error' aria-live='polite'>
+                            Username must be 5-20 characters and contain only letters,
+                            numbers, and underscores
+                        </p>
+                    )}
+
+                    {usernameIsValid && usernameStatus === "checking" && (
+                        <p className='username-checking' aria-live="polite">
+                            Checking username...
+                        </p>
+                    )}
+
+                    {usernameIsValid && usernameStatus === "available" && (
+                        <p className="username-available" aria-live="polite">
                             ✓ Username available
                         </p>
                     )}
 
-                    {focusedField === "username" && 
-                        username.length >= 5 && 
-                        usernameAvailability === false &&(
-                        <p className='username-taken'>
+                    {usernameIsValid && usernameStatus === "taken" && (
+                        <p className="username-taken" aria-live="polite">
                             ✕ Username already taken
                         </p>
                     )}
 
-                    {username.length > 0 && username.length < 5 && (
-                        <p className='username-error'>
-                            Username must be at least 5 characters.
+                    {usernameIsValid && usernameStatus === "error" && (
+                        <p className="username-error" aria-live="polite">
+                            Unable to check username. Please try again.
                         </p>
                     )}
                 </div>
 
                 <div>
                     <label htmlFor="email">Email</label>
+
                     <input 
                         id='email' 
                         type="email" 
                         value = {email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder='you@example.com'
-                        onFocus={() => setFocusedField("email")}
+                        autoComplete='email'
+                        maxLength={254}
+                        onBlur={() => setTouched(prev => ({ ...prev, email: true}))}
                         required
                     />
+
+                    {touched.email && email.length > 0 && !emailIsValid && (
+                        <p className='email-error' aria-live='polite'>
+                            Please enter a valid email address.
+                        </p>
+                    )}
+
+
                 </div>
 
                 <div>
@@ -162,8 +238,13 @@ function Register() {
                             type={showPassword ? "text": "password"}
                             placeholder='Min. 8 characters'
                             minLength={8}
-                            maxLength={16}
+                            maxLength={64}
+                            autoComplete='new-password'
                             onFocus={() => setFocusedField("password")}
+                            onBlur={() => {
+                                setFocusedField(null);
+                                setTouched(prev => ({ ...prev, password: true}));
+                            }}
                             required
                         />
 
@@ -178,12 +259,12 @@ function Register() {
 
                     </div>
 
-                    {focusedField === "password" && (
+                    {(focusedField === "password" || touched.password) && (
                         <div className='password-rules'>
                             <p>Password must contain:</p>
 
                             <div className={passwordRules.length ? "rule-valid" : "rule-invalid"}>
-                                {passwordRules.length ? "✓" : "✕"} 8-16 characters
+                                {passwordRules.length ? "✓" : "✕"} 8-64 characters
                             </div>
 
                             <div className={passwordRules.uppercase ? "rule-valid" : "rule-invalid"}>
@@ -215,9 +296,9 @@ function Register() {
                             id="confirm-password" 
                             type={showConfirmPassword ? "text": "password"}
                             value={confirmPassword}
+                            autoComplete='new-password'
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder='Re-enter your password'
-                            onFocus={() => setFocusedField("confirmPassword")}
                             required
                         />
 
@@ -225,14 +306,17 @@ function Register() {
                             type='button'
                             className='password-toggle'
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            aria-label={showConfirmPassword ? "Hide": "Show"}
+                            aria-label={showConfirmPassword 
+                                            ? "Hide confirm password"
+                                            : "Show confirm password"
+                                        }
                             >
                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
 
                     </div>
 
-                    {focusedField === "confirmPassword" && confirmPassword.length > 0 && (
+                    {confirmPassword.length > 0 && (
                         <p className={
                             password === confirmPassword
                                 ? "password-match"

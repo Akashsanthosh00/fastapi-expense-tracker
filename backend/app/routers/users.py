@@ -1,6 +1,6 @@
 from backend.app.database.models.user import User as UserModel
 from fastapi import APIRouter, Depends, HTTPException
-from backend.app.schemas.user import UserCreate
+from backend.app.schemas.user import UserCreate, UserResponse
 from backend.app.database.database import get_db
 from sqlalchemy.orm import Session
 from backend.app.core.security import (
@@ -12,13 +12,32 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter()
 
-@router.post("/users", status_code=201)
+@router.post("/users", response_model=UserResponse, status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+
+    existing_user = db.query(UserModel).filter(
+        (UserModel.username == user.username) |
+        (UserModel.email == user.email)
+    ).first()
+
+    if existing_user:
+        if existing_user.username == user.username:
+            raise HTTPException(
+                status_code = 400,
+                detail = "Username is already registered."
+            )
+
+        if existing_user.email == user.email:
+            raise HTTPException(
+                status_code = 400,
+                detail = "Email is already registered."
+            )
 
     hashed_password = hash_password(user.password)
 
     new_user = UserModel(
         username = user.username,
+        email = user.email,
         password = hashed_password
     )
 

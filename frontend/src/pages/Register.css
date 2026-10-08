@@ -252,8 +252,9 @@
     color: #EEF2FF;
 }
 
-.password-toggle:focus {
-    outline: none;
+.password-toggle:focus-visible {
+    outline: 2px solid #FFB020;
+    outline-offset: 2px;
 }
 
 .password-rules p {
@@ -297,4 +298,16 @@
     color: #FB7185;
     font-size: 12px;
     text-align: center;
+}
+
+.email-error {
+    margin: 0;
+    color: #FB7185;
+    font-size: 12px;
+}
+
+.username-checking{
+    margin: 0;
+    color: #9AA5C7;
+    font-size: 12px;
 }

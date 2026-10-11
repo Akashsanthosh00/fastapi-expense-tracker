@@ -4,6 +4,8 @@ import { Eye, EyeOff } from "lucide-react";
 
 type UsernameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]{5,20}$/;
+
 function Register() {
 
     const [showPassword, setShowPassword] = useState(false);
@@ -33,15 +35,16 @@ function Register() {
         uppercase: /[A-Z]/.test(password),
         lowercase: /[a-z]/.test(password),
         number: /[0-9]/.test(password),
-        special: /[^A-Za-z0-9]/.test(password),
+        special: /[^A-Za-z0-9\s]/.test(password),
+        noSpaces: !/\s/.test(password)
     }
 
     const [confirmPassword, setConfirmPassword] = useState("");
-    const usernameIsValid = /^[a-zA-Z0-9_]{5,20}$/.test(username);
+    const usernameIsValid = USERNAME_PATTERN.test(username);
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const emailIsValid = 
+    const emailIsValid =
                         normalizedEmail.length <= 254 &&
                         /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail);
 
@@ -75,12 +78,18 @@ function Register() {
             return;
         }
 
+        if (/\s/.test(password)){
+            setSubmitError("Password must not contain spaces.");
+            return;
+        }
+
         if (
             !passwordRules.length ||
             !passwordRules.uppercase ||
             !passwordRules.lowercase ||
             !passwordRules.number ||
-            !passwordRules.special
+            !passwordRules.special ||
+            !passwordRules.noSpaces
         ){
             setSubmitError("Please fix the password requirements.");
             return;
@@ -96,6 +105,8 @@ function Register() {
 
     useEffect(() => {
         const controller = new AbortController();
+        let timedOut = false;
+        let timeoutId: ReturnType<typeof setTimeout>;
 
         const timer = setTimeout(async () => {
 
@@ -104,12 +115,15 @@ function Register() {
                 return;
             }
 
-            setUsernameStatus("checking")
+            timeoutId = setTimeout(() => {
+                timedOut = true;
+                controller.abort();
+            }, 8000);
 
             try {
                 const response = await fetch(
-                    `http://localhost:8000/check-username?username=${encodeURIComponent(username)}`,
-                    {signal: controller.signal}
+                    `${import.meta.env.VITE_API_URL}/check-username?username=${encodeURIComponent(username)}`,
+                { signal: controller.signal }
                 );
 
                 if (!response.ok){
@@ -124,23 +138,29 @@ function Register() {
 
             } catch (error) {
                 if (error instanceof DOMException && error.name === "AbortError"){
+                    if (timedOut) {
+                        setUsernameStatus("error");
+                    }
                     return;
                 }
 
                 setUsernameStatus("error");
+            } finally {
+                clearTimeout(timeoutId);
             }
 
         }, 400);
 
         return () => {
             clearTimeout(timer);
+            clearTimeout(timeoutId);
             controller.abort();
         };
     }, [username, usernameIsValid]);
 
   return (
     <div className="register-page">
-        
+
         <div className='brand'>
             <span className='logo-icon'>ET</span>
             <span>Expense Tracker</span>
@@ -156,13 +176,22 @@ function Register() {
                     <label htmlFor='username'>Username</label>
 
                     <input
-                        id="username" 
-                        type="text" 
+                        id="username"
+                        aria-invalid={touched.username && username.length > 0 && !usernameIsValid}
+                        type="text"
                         placeholder='e.g. akash_s'
                         value={username}
-                        onChange={(e) => {setUsername(e.target.value);
-                            setUsernameStatus("idle")
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setUsername(value);
+
+                            if (USERNAME_PATTERN.test(value)) {
+                                setUsernameStatus("checking");
+                            } else {
+                                setUsernameStatus("idle");
+                            }
                         }}
+
                         onBlur={() => setTouched(prev => ({ ...prev, username:true}))}
                         minLength={5}
                         maxLength={20}
@@ -171,44 +200,47 @@ function Register() {
                         required
                     />
 
-                    {touched.username && username.length > 0 && !usernameIsValid && (
-                        <p className='username-error' aria-live='polite'>
-                            Username must be 5-20 characters and contain only letters,
-                            numbers, and underscores
-                        </p>
-                    )}
+                    <div aria-live='polite' aria-atomic="true">
+                        {touched.username && username.length > 0 && !usernameIsValid && (
+                            <p className='username-error'>
+                                Username must be 5-20 characters and contain only letters,
+                                numbers, and underscores
+                            </p>
+                        )}
 
-                    {usernameIsValid && usernameStatus === "checking" && (
-                        <p className='username-checking' aria-live="polite">
-                            Checking username...
-                        </p>
-                    )}
+                        {usernameIsValid && usernameStatus === "checking" && (
+                            <p className='username-checking'>
+                                Checking username...
+                            </p>
+                        )}
 
-                    {usernameIsValid && usernameStatus === "available" && (
-                        <p className="username-available" aria-live="polite">
-                            ✓ Username available
-                        </p>
-                    )}
+                        {usernameIsValid && usernameStatus === "available" && (
+                            <p className="username-available">
+                                ✓ Username available
+                            </p>
+                        )}
 
-                    {usernameIsValid && usernameStatus === "taken" && (
-                        <p className="username-taken" aria-live="polite">
-                            ✕ Username already taken
-                        </p>
-                    )}
+                        {usernameIsValid && usernameStatus === "taken" && (
+                            <p className="username-taken">
+                                ✕ Username already taken
+                            </p>
+                        )}
 
-                    {usernameIsValid && usernameStatus === "error" && (
-                        <p className="username-error" aria-live="polite">
-                            Unable to check username. Please try again.
-                        </p>
-                    )}
+                        {usernameIsValid && usernameStatus === "error" && (
+                            <p className="username-error">
+                                Unable to check username. Please try again.
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 <div>
                     <label htmlFor="email">Email</label>
 
-                    <input 
-                        id='email' 
-                        type="email" 
+                    <input
+                        id='email'
+                        type="email"
+                        aria-invalid={touched.email && email.length > 0 && !emailIsValid}
                         value = {email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder='you@example.com'
@@ -218,12 +250,13 @@ function Register() {
                         required
                     />
 
-                    {touched.email && email.length > 0 && !emailIsValid && (
-                        <p className='email-error' aria-live='polite'>
-                            Please enter a valid email address.
-                        </p>
-                    )}
-
+                    <div aria-live='polite' aria-atomic='true'>
+                        {touched.email && email.length > 0 && !emailIsValid && (
+                            <p className='email-error'>
+                                Please enter a valid email address.
+                            </p>
+                        )}
+                    </div>
 
                 </div>
 
@@ -231,8 +264,12 @@ function Register() {
                     <label htmlFor="password">Password</label>
 
                     <div className='password-input-wrapper'>
-                        <input 
+                        <input
                             id="password"
+                            aria-invalid={
+                                touched.password && password.length > 0 &&
+                                Object.values(passwordRules).some(rule => !rule)
+                            }
                             value = {password}
                             onChange={(e) => setPassword(e.target.value)}
                             type={showPassword ? "text": "password"}
@@ -259,7 +296,10 @@ function Register() {
 
                     </div>
 
-                    {(focusedField === "password" || touched.password) && (
+                    {(
+                        focusedField === "password" ||
+                        touched.password && Object.values(passwordRules).some(rule => !rule))
+                        && (
                         <div className='password-rules'>
                             <p>Password must contain:</p>
 
@@ -292,21 +332,28 @@ function Register() {
                     <label htmlFor="confirm-password">Confirm Password</label>
 
                     <div className='password-input-wrapper'>
-                        <input 
-                            id="confirm-password" 
+                        <input
+                            id="confirm-password"
+                            aria-invalid={
+                                touched.confirmPassword && confirmPassword.length > 0 &&
+                                password !== confirmPassword
+                            }
                             type={showConfirmPassword ? "text": "password"}
                             value={confirmPassword}
                             autoComplete='new-password'
                             onChange={(e) => setConfirmPassword(e.target.value)}
+                            onBlur={() =>
+                                setTouched(prev => ({ ...prev, confirmPassword: true}))
+                            }
                             placeholder='Re-enter your password'
                             required
                         />
 
-                        <button 
+                        <button
                             type='button'
                             className='password-toggle'
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            aria-label={showConfirmPassword 
+                            aria-label={showConfirmPassword
                                             ? "Hide confirm password"
                                             : "Show confirm password"
                                         }
@@ -316,18 +363,22 @@ function Register() {
 
                     </div>
 
-                    {confirmPassword.length > 0 && (
-                        <p className={
-                            password === confirmPassword
-                                ? "password-match"
-                                : "password-mismatch"
-                        }>
-                            {password === confirmPassword
-                                ? "✓ Passwords match"
-                                : "✕ Passwords do not match"
-                            }
-                        </p>
-                    )}
+                    <div aria-live='polite' aria-atomic='true'>
+                        {(touched.confirmPassword ||
+                            confirmPassword.length >= password.length) &&
+                            confirmPassword.length > 0 && (
+                            <p className={
+                                password === confirmPassword
+                                    ? "password-match"
+                                    : "password-mismatch"
+                            }>
+                                {password === confirmPassword
+                                    ? "✓ Passwords match"
+                                    : "✕ Passwords do not match"
+                                }
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {submitError && (

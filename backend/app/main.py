@@ -28,6 +28,10 @@ app.add_middleware(
 app.include_router(expenses_router)
 app.include_router(users_router)
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 @app.exception_handler(ExpenseNotFoundException)
 def expense_not_found_handler(
     request: Request,

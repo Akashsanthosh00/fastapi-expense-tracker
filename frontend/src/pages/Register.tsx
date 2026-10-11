@@ -6,6 +6,8 @@ type UsernameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{5,20}$/;
 
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "") ?? "";
+
 function Register() {
 
     const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +31,8 @@ function Register() {
     const [password, setPassword] = useState("");
 
     const [submitError, setSubmitError] = useState("")
+    
+    const [usernameCheckAttempt, setUsernameCheckAttempt] = useState(0);
 
     const passwordRules = {
         length: password.length >= 8 && password.length <= 64,
@@ -50,6 +54,13 @@ function Register() {
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        setTouched({
+            username: true,
+            email: true,
+            password: true,
+            confirmPassword: true,
+        });
 
         setSubmitError("");
 
@@ -104,11 +115,30 @@ function Register() {
     }
 
     useEffect(() => {
+        if (!API_BASE_URL) return;
+
+        const controller = new AbortController();
+
+        fetch(`${API_BASE_URL}/health`, {
+            signal: controller.signal,
+        }).catch(() => {
+            // The username check will display an error if the API is unavailable.
+        });
+
+        return () => controller.abort();
+    }, []);
+
+    useEffect(() => {
         const controller = new AbortController();
         let timedOut = false;
-        let timeoutId: ReturnType<typeof setTimeout>;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const timer = setTimeout(async () => {
+
+            if (!API_BASE_URL) {
+                setUsernameStatus("error");
+                return;
+            }
 
             if (username.length < 5 || !usernameIsValid){
                 setUsernameStatus("idle");
@@ -118,11 +148,11 @@ function Register() {
             timeoutId = setTimeout(() => {
                 timedOut = true;
                 controller.abort();
-            }, 8000);
+            }, 45000);
 
             try {
                 const response = await fetch(
-                    `${import.meta.env.VITE_API_URL}/check-username?username=${encodeURIComponent(username)}`,
+                    `${API_BASE_URL}/check-username?username=${encodeURIComponent(username)}`,
                 { signal: controller.signal }
                 );
 
@@ -156,7 +186,7 @@ function Register() {
             clearTimeout(timeoutId);
             controller.abort();
         };
-    }, [username, usernameIsValid]);
+    }, [username, usernameIsValid, usernameCheckAttempt]);
 
   return (
     <div className="register-page">
@@ -182,6 +212,7 @@ function Register() {
                         placeholder='e.g. akash_s'
                         value={username}
                         onChange={(e) => {
+                            setSubmitError("");
                             const value = e.target.value;
                             setUsername(value);
 
@@ -228,7 +259,16 @@ function Register() {
 
                         {usernameIsValid && usernameStatus === "error" && (
                             <p className="username-error">
-                                Unable to check username. Please try again.
+                                Unable to check username. {" "}
+                                <button
+                                    type='button'
+                                    onClick={() => {
+                                        setUsernameStatus("checking")
+                                        setUsernameCheckAttempt(prev => prev + 1);
+                                    }}
+                                >
+                                    Try again
+                                </button>
                             </p>
                         )}
                     </div>
@@ -242,7 +282,10 @@ function Register() {
                         type="email"
                         aria-invalid={touched.email && email.length > 0 && !emailIsValid}
                         value = {email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                            setSubmitError("");
+                            setEmail(e.target.value);
+                        }}
                         placeholder='you@example.com'
                         autoComplete='email'
                         maxLength={254}
@@ -271,7 +314,10 @@ function Register() {
                                 Object.values(passwordRules).some(rule => !rule)
                             }
                             value = {password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => {
+                                setSubmitError("");
+                                setPassword(e.target.value);
+                            }}
                             type={showPassword ? "text": "password"}
                             placeholder='Min. 8 characters'
                             minLength={8}
@@ -341,7 +387,10 @@ function Register() {
                             type={showConfirmPassword ? "text": "password"}
                             value={confirmPassword}
                             autoComplete='new-password'
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onChange={(e) => {
+                                setSubmitError("");
+                                setConfirmPassword(e.target.value);
+                            }}
                             onBlur={() =>
                                 setTouched(prev => ({ ...prev, confirmPassword: true}))
                             }

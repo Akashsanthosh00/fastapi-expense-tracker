@@ -347,7 +347,7 @@ function Register() {
                         touched.password && Object.values(passwordRules).some(rule => !rule))
                         && (
                         <div className='password-rules'>
-                            <p>Password must contain:</p>
+                            <p>Password requirements:</p>
 
                             <div className={passwordRules.length ? "rule-valid" : "rule-invalid"}>
                                 {passwordRules.length ? "✓" : "✕"} 8-64 characters
@@ -367,6 +367,10 @@ function Register() {
 
                             <div className={passwordRules.special ? "rule-valid" : "rule-invalid"}>
                                 {passwordRules.special ? "✓" : "✕"} one special character
+                            </div>
+
+                            <div className={passwordRules.noSpaces ? "rule-valid" : "rule-invalid"}>
+                                {passwordRules.noSpaces ? "✓" : "✕"} No spaces 
                             </div>
 
                         </div>

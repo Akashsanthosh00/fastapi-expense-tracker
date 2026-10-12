@@ -321,3 +321,54 @@
 .register-page form > div > div[aria-live]:empty {
     margin-top: -6px;
 }
+
+.username-error button {
+    display: inline-flex;
+    align-items: center;
+
+    margin-left: 4px;
+    padding: 6px 12px;
+
+    background: transparent;
+    color: #FFB020;
+    border: 1px solid #FFB020;
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+
+    cursor: pointer;
+    vertical-align: middle;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.1s ease;
+}
+
+.username-error button:hover:not(:disabled) {
+    background-color: #FFB020;
+    color: #0A0F1F;
+}
+
+.username-error button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.username-error button:focus-visible {
+    outline: 2px solid #FFB020;
+    outline-offset: 3px;
+}
+
+.username-error button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .username-error button {
+        transition: none;
+    }
+}

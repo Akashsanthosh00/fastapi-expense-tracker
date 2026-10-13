@@ -15,8 +15,21 @@ from backend.app.database.models.expense import Expense
 config = context.config
 
 load_dotenv()
-database_url = os.getenv("DATABASE_URL")
-config.set_main_option("sqlalchemy.url", database_url)
+
+database_url = config.get_main_option("sqlalchemy.url")
+
+if not database_url:
+    database_url = os.getenv("DATABASE_URL")
+
+if not database_url:
+    raise RuntimeError(
+        "Database URL is not configured."
+    )
+
+config.set_main_option(
+    "sqlalchemy.url",
+    database_url.replace("%", "%%"),
+)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

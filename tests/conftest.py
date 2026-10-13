@@ -1,6 +1,9 @@
 import os
 import pytest
 
+from alembic.config import Config
+from alembic import command
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -10,9 +13,20 @@ from backend.app.main import app
 from fastapi.testclient import TestClient
 
 
-load_dotenv()
+load_dotenv(".env")
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+
+if not TEST_DATABASE_URL:
+    raise RuntimeError("TEST_DATABASE_URL is not configured")
+
+alembic_cfg = Config("backend/alembic.ini")
+alembic_cfg.set_main_option(
+    "sqlalchemy.url",
+    TEST_DATABASE_URL.replace("%", "%%"),
+)
+
+command.upgrade(alembic_cfg, "head")
 
 test_engine = create_engine(TEST_DATABASE_URL)
 
@@ -21,8 +35,6 @@ TestingSessionLocal = sessionmaker(
     autoflush=False,
     bind=test_engine
 )
-
-Base.metadata.create_all(bind=test_engine)
 
 @pytest.fixture(autouse=True)
 def clean_database():

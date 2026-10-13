@@ -29,6 +29,7 @@ def test_login():
 
     user = User(
         username="login_test_user",
+        email="login_test_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -52,6 +53,7 @@ def test_get_expenses_with_authentication():
 
     user = User(
         username="expenseuser",
+        email="expenseuser@example.com",
         password=hash_password("Test@123")
     )
 
@@ -84,6 +86,7 @@ def test_create_and_get_expense():
 
     user = User(
         username="expense_create_user",
+        email="expense_create_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -136,6 +139,7 @@ def test_update_expense():
 
     user = User(
         username="expense_update_user",
+        email="expense_update_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -196,6 +200,7 @@ def test_delete_expense():
 
     user = User(
         username="expense_delete_user",
+        email="expense_delete_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -248,6 +253,7 @@ def test_patch_expense():
 
     user = User(
         username="expense_patch_user",
+        email="expense_patch_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -306,6 +312,7 @@ def test_delete_nonexistent_expense():
 
     user = User(
         username="expense_delete_invalid_user",
+        email="expense_delete_invalid_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -344,6 +351,7 @@ def test_update_nonexistent_expense():
 
     user = User(
         username="expense_update_invalid_user",
+        email="expense_update_invalid_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -389,6 +397,7 @@ def test_patch_nonexistent_expense():
 
     user = User(
         username="expense_patch_invalid_user",
+        email="expense_patch_invalid_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -491,11 +500,13 @@ def test_user_cannot_delete_another_users_expense():
 
     user1 = User(
         username="expense_owner",
+        email="expense_owner@example.com",
         password=hash_password("Test@123")
     )
 
     user2 = User(
         username="expense_other_user",
+        email="expense_other_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -566,11 +577,13 @@ def test_user_cannot_update_another_users_expense():
 
     user1 = User(
         username="expense_put_owner",
+        email="expense_put_owner@example.com",
         password=hash_password("Test@123")
     )
 
     user2 = User(
         username="expense_put_other_user",
+        email="expense_put_other_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -648,11 +661,13 @@ def test_user_cannot_patch_another_users_expense():
 
     user1 = User(
         username="expense_patch_owner",
+        email="expense_patch_owner@example.com",
         password=hash_password("Test@123")
     )
 
     user2 = User(
         username="expense_patch_other_user",
+        email="expense_patch_other_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -727,11 +742,13 @@ def test_user_cannot_see_another_users_expenses():
 
     user1 = User(
         username="expense_get_owner",
+        email="expense_get_owner@example.com",
         password=hash_password("Test@123")
     )
 
     user2 = User(
         username="expense_get_other_user",
+        email="expense_get_other_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -802,6 +819,7 @@ def test_login_success():
 
     user = User(
         username="login_success_user",
+        email="login_success_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -831,6 +849,7 @@ def test_login_wrong_password():
 
     user = User(
         username="login_wrong_password_user",
+        email="login_wrong_password_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -952,6 +971,7 @@ def test_create_expense_negative_amount():
 
     user = User(
         username="negative_amount_user",
+        email="negative_amount_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -992,6 +1012,7 @@ def test_create_expense_zero_amount():
 
     user = User(
         username="zero_amount_user",
+        email="zero_amount_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1032,6 +1053,7 @@ def test_create_expense_invalid_category():
 
     user = User(
         username="invalid_category_user",
+        email="invalid_category_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1072,6 +1094,7 @@ def test_create_expense_without_title():
 
     user = User(
         username="missing_title_user",
+        email="missing_title_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1112,6 +1135,7 @@ def test_create_expense_invalid_date():
 
     user = User(
         username="invalid_date_user",
+        email="invalid_date_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1152,6 +1176,7 @@ def test_create_expense_missing_required_fields():
 
     user = User(
         username="missing_fields_user",
+        email="missing_fields_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1187,6 +1212,7 @@ def test_update_expense_invalid_expense_id():
 
     user = User(
         username="invalid_expense_id_user",
+        email="invalid_expense_id_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1230,6 +1256,7 @@ def test_get_expenses_category_filter():
 
     user = User(
         username="category_filter_user",
+        email="category_filter_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1288,6 +1315,7 @@ def test_get_expenses_title_filter():
 
     user = User(
         username="title_filter_user",
+        email="title_filter_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1346,6 +1374,7 @@ def test_get_expenses_date_filter():
 
     user = User(
         username="date_filter_user",
+        email="date_filter_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1404,6 +1433,7 @@ def test_get_expenses_amount_filter():
 
     user = User(
         username="amount_filter_user",
+        email="amount_filter_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1462,6 +1492,7 @@ def test_get_expenses_pagination():
 
     user = User(
         username="pagination_user",
+        email="pagination_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1519,6 +1550,7 @@ def test_get_multiple_expenses():
 
     user = User(
         username="multiple_expenses_user",
+        email="multiple_expenses_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1583,6 +1615,7 @@ def test_get_expenses_user_with_no_expenses():
 
     user = User(
         username="no_expenses_user",
+        email="no_expenses_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1620,6 +1653,7 @@ def test_get_expenses_sorting():
 
     user = User(
         username="sorting_user",
+        email="sorting_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1692,6 +1726,7 @@ def test_duplicate_username():
 
     user1 = User(
         username="duplicate_user",
+        email="duplicate_user1@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1700,6 +1735,7 @@ def test_duplicate_username():
 
     user2 = User(
         username="duplicate_user",
+        email="duplicate_user2@example.com",
         password=hash_password("Test@456")
     )
 
@@ -1717,6 +1753,7 @@ def test_create_expense_very_large_amount():
 
     user = User(
         username="large_amount_user",
+        email="large_amount_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1758,6 +1795,7 @@ def test_create_expense_boundary_amount():
 
     user = User(
         username="boundary_amount_user",
+        email="boundary_amount_user@example.com",
         password=hash_password("Test@123")
     )
 
@@ -1798,6 +1836,7 @@ def test_multiple_expenses_same_user():
 
     user = User(
         username="same_user_expenses",
+        email="same_user_expenses@example.com",
         password=hash_password("Test@123")
     )
 

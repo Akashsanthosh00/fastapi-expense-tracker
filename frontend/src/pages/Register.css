@@ -372,3 +372,10 @@
         transition: none;
     }
 }
+
+.submit-success {
+    margin: 0 0 8px;
+    color: #51e453;
+    font-size: 12px;
+    text-align: center;
+}

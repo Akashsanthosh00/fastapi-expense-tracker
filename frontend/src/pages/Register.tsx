@@ -30,7 +30,11 @@ function Register() {
 
     const [password, setPassword] = useState("");
 
-    const [submitError, setSubmitError] = useState("")
+    const [submitError, setSubmitError] = useState("");
+
+    const [submitSuccess, setSubmitSuccess] = useState("");
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     const [usernameCheckAttempt, setUsernameCheckAttempt] = useState(0);
 
@@ -52,7 +56,7 @@ function Register() {
                         normalizedEmail.length <= 254 &&
                         /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         setTouched({
@@ -63,6 +67,7 @@ function Register() {
         });
 
         setSubmitError("");
+        setSubmitSuccess("");
 
         if (!usernameIsValid){
             setSubmitError("Please enter a valid username.");
@@ -111,7 +116,34 @@ function Register() {
             return;
         }
 
-        console.log("Form submitted")
+        setIsSubmitting(true)
+        try{
+            const response = await fetch("http://localhost:8000/users",{
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json",
+                },
+
+                body: JSON.stringify({
+                    username,
+                    email,
+                    password,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok){
+                setSubmitError(data.detail || "Registration Failed. Please try again.");
+                return;
+            }
+
+            setSubmitSuccess("Account created successfully!");
+        } catch {
+            setSubmitError("Unable to connect to the server. Please try again.");
+        } finally{
+            setIsSubmitting(false);
+        }
     }
 
     useEffect(() => {
@@ -440,7 +472,19 @@ function Register() {
                     </p>
                 )}
 
-                <button className='submit-button'>Create account</button>
+                {submitSuccess && (
+                    <p className='submit-success'>
+                        {submitSuccess}
+                    </p>
+                )}
+
+                <button 
+                    className='submit-button'
+                    type='submit'
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? "Creating account..." : "Create account"}
+                </button>
             </form>
 
         </div>
